@@ -1,0 +1,73 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Nature Vibes palette */
+    --primary: 93 70% 53%; /* #8BC34A */
+    --primary-foreground: 200 19% 18%; /* #263238 */
+    --primary-hover: 93 70% 43%; /* Escurecido 10% */
+
+    --secondary: 65 70% 55%; /* #CDDC39 */
+    --secondary-foreground: 200 19% 18%; /* #263238 */
+    --secondary-hover: 65 70% 45%; /* Escurecido 10% */
+
+    --accent: 36 100% 50%; /* #FF9800 */
+    --accent-foreground: 200 19% 18%; /* #263238 */
+    --accent-hover: 36 100% 40%; /* Escurecido 10% */
+
+    --background: 0 0% 100%; /* #FFFFFF */
+    --foreground: 200 19% 18%; /* #263238 */
+
+    --card: 0 0% 100%; /* #FFFFFF */
+    --card-foreground: 200 19% 18%; /* #263238 */
+
+    --muted: 195 8% 95%; /* #ECEFF1 */
+    --muted-foreground: 200 19% 36%; /* Versão mais clara do texto principal */
+
+    --border: 195 8% 90%; /* Versão mais escura do muted */
+    --input: 195 8% 90%; /* Igual ao border */
+    --ring: 93 70% 53%; /* Igual ao primary */
+
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    /* Dark mode - invertendo neutros e reduzindo saturação dos acentos */
+    --primary: 93 50% 43%; /* Saturação reduzida e escurecida */
+    --primary-foreground: 0 0% 98%; /* Texto claro */
+    --primary-hover: 93 50% 33%; /* Escurecido 10% */
+
+    --secondary: 65 50% 45%; /* Saturação reduzida e escurecida */
+    --secondary-foreground: 0 0% 98%; /* Texto claro */
+    --secondary-hover: 65 50% 35%; /* Escurecido 10% */
+
+    --accent: 36 80% 45%; /* Saturação reduzida e escurecida */
+    --accent-foreground: 0 0% 98%; /* Texto claro */
+    --accent-hover: 36 80% 35%; /* Escurecido 10% */
+
+    --background: 200 19% 10%; /* Versão escura do texto principal */
+    --foreground: 0 0% 95%; /* Texto claro */
+
+    --card: 200 19% 12%; /* Versão escura do text principal, levemente mais clara que o fundo */
+    --card-foreground: 0 0% 95%; /* Texto claro */
+
+    --muted: 200 19% 20%; /* Versão mais clara do background */
+    --muted-foreground: 0 0% 75%; /* Versão mais escura do texto claro */
+
+    --border: 200 19% 25%; /* Versão mais clara do muted */
+    --input: 200 19% 25%; /* Igual ao border */
+    --ring: 93 50% 43%; /* Igual ao primary */
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+}
