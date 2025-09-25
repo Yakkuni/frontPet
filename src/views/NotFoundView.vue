@@ -20,7 +20,7 @@
           </RouterLink>
         </div>
         <div class="mt-8">
-          <img src="/placeholder.svg" alt="Ilustração de cachorro confuso" class="max-w-xs mx-auto" />
+          <img src="/sorry.png" alt="Ilustração de cachorro confuso" class="max-w-xs mx-auto" />
         </div>
       </div>
     </div>

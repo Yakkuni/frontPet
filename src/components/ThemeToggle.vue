@@ -1,24 +1,37 @@
 <template>
-  <div>
-    <Button variant="ghost" size="icon" @click="toggleMenu">
+  <div class="relative" ref="themeToggleRef">
+    <Button variant="ghost" size="icon" @click="isOpen = !isOpen">
       <Sun v-if="!isDark" class="h-5 w-5" />
       <Moon v-else class="h-5 w-5" />
       <span class="sr-only">Alternar tema</span>
     </Button>
-    <div v-if="isOpen" class="absolute right-2 top-12 z-50 rounded-md border bg-card p-1 shadow-md">
-      <Button variant="ghost" class="w-full justify-start" @click="setTheme('light')">
-        <Sun class="mr-2 h-4 w-4" />
-        <span>Claro</span>
-      </Button>
-      <Button variant="ghost" class="w-full justify-start" @click="setTheme('dark')">
-        <Moon class="mr-2 h-4 w-4" />
-        <span>Escuro</span>
-      </Button>
-      <Button variant="ghost" class="w-full justify-start" @click="setTheme('system')">
-        <Laptop class="mr-2 h-4 w-4" />
-        <span>Sistema</span>
-      </Button>
-    </div>
+
+    <Transition
+      enter-active-class="transition ease-out duration-100"
+      enter-from-class="transform opacity-0 scale-95"
+      enter-to-class="transform opacity-100 scale-100"
+      leave-active-class="transition ease-in duration-75"
+      leave-from-class="transform opacity-100 scale-100"
+      leave-to-class="transform opacity-0 scale-95"
+    >
+      <div
+        v-if="isOpen"
+        class="absolute z-50 mt-2 w-36 origin-top-right rounded-md border bg-card p-1 shadow-lg focus:outline-none left-1/2 -translate-x-1/2"
+      >
+        <Button variant="ghost" class="w-full justify-start" @click="setTheme('light')">
+          <Sun class="mr-2 h-4 w-4" />
+          <span>Claro</span>
+        </Button>
+        <Button variant="ghost" class="w-full justify-start" @click="setTheme('dark')">
+          <Moon class="mr-2 h-4 w-4" />
+          <span>Escuro</span>
+        </Button>
+        <Button variant="ghost" class="w-full justify-start" @click="setTheme('system')">
+          <Laptop class="mr-2 h-4 w-4" />
+          <span>Sistema</span>
+        </Button>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -30,6 +43,7 @@ import { useThemeStore } from '@/stores/theme'
 
 const themeStore = useThemeStore()
 const isOpen = ref(false)
+const themeToggleRef = ref<HTMLElement | null>(null)
 
 const isDark = computed(() => {
   if (themeStore.theme === 'system') {
@@ -38,28 +52,22 @@ const isDark = computed(() => {
   return themeStore.theme === 'dark'
 })
 
-function toggleMenu() {
-  isOpen.value = !isOpen.value
-}
-
 function setTheme(theme: 'light' | 'dark' | 'system') {
   themeStore.setTheme(theme)
   isOpen.value = false
 }
 
-// Fechar menu ao clicar fora
-function handleClickOutside(event: MouseEvent) {
-  const target = event.target as HTMLElement
-  if (!target.closest('div') || !target.closest('div').contains(target)) {
+const handleClickOutside = (event: MouseEvent) => {
+  if (themeToggleRef.value && !themeToggleRef.value.contains(event.target as Node)) {
     isOpen.value = false
   }
 }
 
 onMounted(() => {
-  document.addEventListener('click', handleClickOutside)
+  document.addEventListener('mousedown', handleClickOutside)
 })
 
 onBeforeUnmount(() => {
-  document.removeEventListener('click', handleClickOutside)
+  document.removeEventListener('mousedown', handleClickOutside)
 })
 </script>
