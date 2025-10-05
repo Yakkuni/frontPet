@@ -15,8 +15,7 @@
         
         <div class="hidden md:flex flex-col items-center justify-center w-1/2 p-8">
           <img 
-            src="https://via.placeholder.com/400x300/1e293b/d1d5db?text=Bem-vindo+de+Volta" 
-            alt="Animal de estimação feliz" 
+            src="/gatoCuidado.png" alt="Animal de estimação feliz" 
             class="max-w-full h-auto rounded-lg shadow-xl"
           >
           <h2 class="text-4xl font-extrabold text-primary-foreground mt-6 text-center leading-tight">
@@ -109,6 +108,7 @@
 import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { PawPrint as Paw, Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth' // Importe a store
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Label from '@/components/ui/Label.vue'
@@ -119,6 +119,7 @@ import CardFooter from '@/components/ui/CardFooter.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
+const authStore = useAuthStore() // Instancie a store
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -126,11 +127,16 @@ const rememberMe = ref(false)
 const isLoading = ref(false)
 
 const handleLogin = async () => {
-  isLoading.value = true
-  // Simula uma chamada de API
-  setTimeout(() => {
-    isLoading.value = false
-    router.push('/dashboard')
-  }, 1500)
-}
+  isLoading.value = true;
+  try {
+    await authStore.login({
+      email: email.value,
+      password: password.value,
+    });
+  } catch (error) {
+    // A store já trata o alerta de erro
+  } finally {
+    isLoading.value = false;
+  }
+};
 </script>
