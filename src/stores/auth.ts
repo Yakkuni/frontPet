@@ -2,7 +2,7 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '@/api/authService';
-import axios from 'axios'; // Importe o axios para ter acesso aos tipos de erro
+import axios from 'axios';
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('authToken'));
@@ -12,7 +12,7 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value);
 
   async function login(credentials: { email: string; password: string }) {
-    // ... (sua função de login)
+    // ... (função de login existente)
   }
 
   async function register(userData: any) {
@@ -24,31 +24,26 @@ export const useAuthStore = defineStore('auth', () => {
       await router.push('/auth/login');
 
     } catch (error) {
-      console.error('Erro de registro:', error);
-
-      // LÓGICA DE ERRO MELHORADA E MAIS DETALHADA
+      // O console.log foi adicionado aqui para depuração
       if (axios.isAxiosError(error) && error.response) {
-        // A API respondeu com um erro (4xx ou 5xx)
+        console.log('Resposta completa do erro do servidor:', error.response);
+        
         const responseData = error.response.data;
         let errorMessage = 'Ocorreu um erro desconhecido.';
 
         if (responseData && responseData.message) {
-          // Tenta pegar a mensagem principal do erro
           errorMessage = responseData.message;
         } else if (responseData && typeof responseData === 'object') {
-          // Se houver um objeto de erros (comum em validação), formata a mensagem
           const errorDetails = Object.values(responseData).flat().join('\n');
           errorMessage = errorDetails;
         }
         
         alert(`Erro de registro:\n${errorMessage}`);
-
       } else {
-        // Erro de rede ou outro erro genérico
+        console.error('Erro de registro (não-Axios):', error);
         alert('Não foi possível criar a conta. Verifique sua conexão e tente novamente.');
       }
       
-      // Re-lança o erro para que a interface saiba que a requisição falhou
       throw error;
     }
   }

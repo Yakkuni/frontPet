@@ -47,8 +47,8 @@
                     <Input id="cpf" v-model="form.cpf" @input="formatCPF" placeholder="000.000.000-00" maxlength="14" required />
                   </div>
                   <div class="space-y-2">
-                    <Label for="birthdate">Data de Nascimento</Label>
-                    <Input id="birthdate" type="date" v-model="form.birthdate" required />
+                    <Label for="birthDate">Data de Nascimento</Label>
+                    <Input id="birthDate" type="date" v-model="form.birthDate" required />
                   </div>
                 </div>
 
@@ -128,7 +128,8 @@
   </div>
 </template>
 
-<script setup lang="ts">import { ref, reactive } from 'vue';
+<script setup lang="ts">
+import { ref, reactive } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { PawPrint as Paw } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
@@ -150,7 +151,7 @@ const showConfirmPassword = ref(false);
 const form = reactive({
   fullName: '',
   cpf: '',
-  birthdate: '',
+  birthDate: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -159,7 +160,7 @@ const form = reactive({
 
 const formatCPF = (event: Event) => {
   const input = event.target as HTMLInputElement;
-  let value = input.value.replace(/\D/g, '');
+  let value = input.value.replace(/\D/g, ''); // Remove tudo que não é dígito
   value = value.replace(/(\d{3})(\d)/, '$1.$2');
   value = value.replace(/(\d{3})(\d)/, '$1.$2');
   value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
@@ -178,18 +179,22 @@ const handleRegister = async () => {
 
   isLoading.value = true;
   try {
-    // Renomeia 'birthdate' para 'birthDate' antes de enviar para a API
+    // Monta o objeto com os nomes exatos que a API espera
     const apiData = { 
-      ...form, 
-      cpf: form.cpf.replace(/\D/g, ''),
-      birthDate: form.birthdate // Renomeando o campo
+      fullName: form.fullName,
+      cpf: form.cpf.replace(/\D/g, ''), // Envia o CPF sem máscara
+      birthDate: form.birthDate,
+      email: form.email,
+      password: form.password,
     };
-    // A propriedade 'birthdate' original não é mais necessária no objeto enviado
-    delete (apiData as any).birthdate;
+    
+    // Log para depuração
+    console.log('Dados que estão a ser enviados para a API:', apiData);
 
     await authStore.register(apiData);
+
   } catch(error) {
-    // A store já lida com o alerta de erro, não precisamos fazer nada aqui
+    // A store já está configurada para mostrar o erro vindo da API
   } finally {
     isLoading.value = false;
   }
