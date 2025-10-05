@@ -11,6 +11,8 @@ export default defineConfig({
   },
   // Adicione esta seção de "server"
   server: {
+    host: true,
+    allowedHosts: ['app.zampet.dev.cybercore.dev.br'],
     proxy: {
       // Qualquer requisição que comece com /api será redirecionada
       '/api': {
