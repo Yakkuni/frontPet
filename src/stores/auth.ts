@@ -12,7 +12,35 @@ export const useAuthStore = defineStore('auth', () => {
   const isAuthenticated = computed(() => !!token.value);
 
   async function login(credentials: { email: string; password: string }) {
-    // ... (função de login existente)
+    try {
+      const response = await authService.login(credentials);
+      
+      // A CORREÇÃO ESTÁ AQUI: Acessamos response.data.data.token
+      const newToken = response.data.data.token;
+      if (!newToken) {
+        throw new Error("Token não encontrado na resposta da API");
+      }
+
+      // Guarda o token no estado e no localStorage para persistir a sessão
+      token.value = newToken;
+      localStorage.setItem('authToken', newToken);
+
+      // Redireciona para a página de pets após o login bem-sucedido
+      await router.push('/pets');
+
+    } catch (error) {
+      console.error('Erro de login:', error);
+      localStorage.removeItem('authToken');
+      token.value = null;
+
+      if (axios.isAxiosError(error) && error.response) {
+        const errorMessage = error.response.data?.message || 'Credenciais inválidas.';
+        alert(`Erro de login: ${errorMessage}`);
+      } else {
+        alert('Não foi possível fazer o login. Verifique sua conexão e tente novamente.');
+      }
+      throw error;
+    }
   }
 
   async function register(userData: any) {
@@ -24,7 +52,6 @@ export const useAuthStore = defineStore('auth', () => {
       await router.push('/auth/login');
 
     } catch (error) {
-      // O console.log foi adicionado aqui para depuração
       if (axios.isAxiosError(error) && error.response) {
         console.log('Resposta completa do erro do servidor:', error.response);
         
