@@ -7,71 +7,57 @@ import axios from 'axios';
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('authToken'));
   const user = ref(null);
+  const error = ref<string | null>(null);
   const router = useRouter();
 
   const isAuthenticated = computed(() => !!token.value);
 
+  function clearError() {
+    error.value = null;
+  }
+
   async function login(credentials: { email: string; password: string }) {
+    error.value = null;
     try {
       const response = await authService.login(credentials);
-      
-      // A CORREÇÃO ESTÁ AQUI: Acessamos response.data.data.token
       const newToken = response.data.data.token;
-      if (!newToken) {
-        throw new Error("Token não encontrado na resposta da API");
-      }
-
-      // Guarda o token no estado e no localStorage para persistir a sessão
+      if (!newToken) throw new Error("Token não encontrado");
       token.value = newToken;
       localStorage.setItem('authToken', newToken);
-
-      // Redireciona para a página de pets após o login bem-sucedido
       await router.push('/pets');
-
-    } catch (error) {
-      console.error('Erro de login:', error);
+    } catch (err) {
       localStorage.removeItem('authToken');
       token.value = null;
-
-      if (axios.isAxiosError(error) && error.response) {
-        const errorMessage = error.response.data?.message || 'Credenciais inválidas.';
-        alert(`Erro de login: ${errorMessage}`);
+      if (axios.isAxiosError(err) && err.response) {
+        error.value = err.response.data?.message || 'Credenciais inválidas.';
       } else {
-        alert('Não foi possível fazer o login. Verifique sua conexão e tente novamente.');
+        error.value = 'Não foi possível fazer o login. Verifique a sua conexão.';
       }
-      throw error;
+      console.error('Erro de login:', err);
+      throw err; 
     }
   }
 
   async function register(userData: any) {
+    error.value = null; // Limpa erros antigos
     try {
       const { confirmPassword, ...apiData } = userData;
       await authService.register(apiData);
       
-      alert('Conta criada com sucesso! Por favor, faça o login.');
-      await router.push('/auth/login');
+      // Remove o alert de sucesso para um fluxo mais limpo
+      // alert('Conta criada com sucesso! Por favor, faça o login.');
+      await router.push({ name: 'login', query: { registered: 'true' } });
 
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response) {
-        console.log('Resposta completa do erro do servidor:', error.response);
-        
-        const responseData = error.response.data;
-        let errorMessage = 'Ocorreu um erro desconhecido.';
-
-        if (responseData && responseData.message) {
-          errorMessage = responseData.message;
-        } else if (responseData && typeof responseData === 'object') {
-          const errorDetails = Object.values(responseData).flat().join('\n');
-          errorMessage = errorDetails;
-        }
-        
-        alert(`Erro de registro:\n${errorMessage}`);
+    } catch (err) {
+      // Guarda a mensagem de erro no estado
+      if (axios.isAxiosError(err) && err.response) {
+        const responseData = err.response.data;
+        error.value = responseData?.message || 'Ocorreu um erro desconhecido.';
       } else {
-        console.error('Erro de registro (não-Axios):', error);
-        alert('Não foi possível criar a conta. Verifique sua conexão e tente novamente.');
+        error.value = 'Não foi possível criar a conta. Verifique sua conexão.';
       }
-      
-      throw error;
+      console.error('Erro de registro:', err);
+      throw err;
     }
   }
 
@@ -82,5 +68,5 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/auth/login');
   }
 
-  return { token, user, isAuthenticated, login, register, logout };
+  return { token, user, error, isAuthenticated, login, register, logout, clearError };
 });

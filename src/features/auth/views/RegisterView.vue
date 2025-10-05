@@ -11,7 +11,7 @@
     </div>
 
     <div class="flex-1 flex items-center justify-center p-4">
-      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 -mt-64">
+      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 -mt-16 md:-mt-64">
         
         <div class="hidden md:flex flex-col items-center justify-center w-1/2 p-8">
           <img 
@@ -36,82 +36,7 @@
           <Card>
             <CardContent>
               <form @submit.prevent="handleRegister" class="space-y-4">
-                <div class="space-y-2">
-                  <Label for="fullName">Nome completo</Label>
-                  <Input id="fullName" v-model="form.fullName" placeholder="Digite seu nome completo" required />
-                </div>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div class="space-y-2">
-                    <Label for="cpf">CPF</Label>
-                    <Input id="cpf" v-model="form.cpf" @input="formatCPF" placeholder="000.000.000-00" maxlength="14" required />
-                  </div>
-                  <div class="space-y-2">
-                    <Label for="birthDate">Data de Nascimento</Label>
-                    <Input id="birthDate" type="date" v-model="form.birthDate" required />
-                  </div>
-                </div>
-
-                <div class="space-y-2">
-                  <Label for="email">Email</Label>
-                  <Input id="email" type="email" v-model="form.email" placeholder="Digite seu email" required />
-                </div>
-
-                <div class="space-y-2">
-                  <Label for="password">Senha</Label>
-                  <div class="relative">
-                    <Input
-                      id="password"
-                      :type="showPassword ? 'text' : 'password'"
-                      v-model="form.password"
-                      placeholder="Digite sua senha"
-                      required
-                    />
-                    <button
-                      type="button"
-                      @click="showPassword = !showPassword"
-                      class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <span v-if="showPassword">🙈</span>
-                      <span v-else>👁️</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div class="space-y-2">
-                  <Label for="confirmPassword">Confirme sua senha</Label>
-                   <div class="relative">
-                    <Input
-                      id="confirmPassword"
-                      :type="showConfirmPassword ? 'text' : 'password'"
-                      v-model="form.confirmPassword"
-                      placeholder="Confirme sua senha"
-                      required
-                    />
-                    <button
-                      type="button"
-                      @click="showConfirmPassword = !showConfirmPassword"
-                      class="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500"
-                    >
-                      <span v-if="showConfirmPassword">🙈</span>
-                      <span v-else>👁️</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div class="flex items-center space-x-2">
-                  <Checkbox id="terms" v-model="form.acceptTerms" />
-                  <Label for="terms" class="text-sm">
-                    Eu aceito os <a href="#" class="text-primary hover:underline">Termos de Uso</a> e a
-                    <a href="#" class="text-primary hover:underline">Política de Privacidade</a>
-                  </Label>
-                </div>
-
-                <Button type="submit" class="w-full" :disabled="isLoading">
-                  <span v-if="isLoading">Registrando...</span>
-                  <span v-else>Registrar</span>
-                </Button>
-              </form>
+                 </form>
             </CardContent>
             <CardFooter>
               <p class="text-center text-sm text-foreground/70 w-full">
@@ -129,10 +54,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue';
+import { ref, reactive, computed, onUnmounted } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
-import { PawPrint as Paw } from 'lucide-vue-next';
+import { PawPrint as Paw, AlertCircle } from 'lucide-vue-next';
 import { useAuthStore } from '@/stores/auth';
+// ... outras importações de componentes ...
 import Card from '@/components/ui/Card.vue';
 import CardContent from '@/components/ui/CardContent.vue';
 import CardFooter from '@/components/ui/CardFooter.vue';
@@ -142,25 +68,42 @@ import Checkbox from '@/components/ui/Checkbox.vue';
 import Button from '@/components/ui/Button.vue';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 
-const router = useRouter();
+
 const authStore = useAuthStore();
 const isLoading = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
 const form = reactive({
-  fullName: '',
+  name: '',
   cpf: '',
-  birthDate: '',
+  birthdate: '',
   email: '',
   password: '',
   confirmPassword: '',
   acceptTerms: false
 });
 
-const formatCPF = (event: Event) => {
-  const input = event.target as HTMLInputElement;
-  let value = input.value.replace(/\D/g, ''); // Remove tudo que não é dígito
+// Lógica de validação de senha
+const passwordValidation = reactive({
+  minLength: false,
+  hasUppercase: false,
+  hasNumber: false,
+  hasSymbol: false,
+});
+
+const isPasswordValid = computed(() => Object.values(passwordValidation).every(Boolean));
+
+function validatePassword() {
+  const pass = form.password;
+  passwordValidation.minLength = pass.length >= 8;
+  passwordValidation.hasUppercase = /[A-Z]/.test(pass);
+  passwordValidation.hasNumber = /\d/.test(pass);
+  passwordValidation.hasSymbol = /[!@#$%^&*]/.test(pass);
+}
+
+const formatCPF = () => {
+  let value = form.cpf.replace(/\D/g, '');
   value = value.replace(/(\d{3})(\d)/, '$1.$2');
   value = value.replace(/(\d{3})(\d)/, '$1.$2');
   value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
@@ -168,31 +111,34 @@ const formatCPF = (event: Event) => {
 };
 
 const handleRegister = async () => {
-  if (!form.acceptTerms) {
-    alert('Você precisa aceitar os termos de uso.');
+  if (!isPasswordValid.value) {
+    alert('A sua senha não cumpre todos os requisitos de segurança.');
     return;
   }
   if (form.password !== form.confirmPassword) {
     alert('As senhas não coincidem.');
     return;
   }
+  // ... outras validações ...
 
   isLoading.value = true;
   try {
     const apiData = { 
-      fullName: form.fullName,
-      cpf: form.cpf.replace(/\D/g, ''), // Envia o CPF sem máscara
-      birthDate: form.birthDate,
+      fullName: form.name,
+      cpf: form.cpf.replace(/\D/g, ''),
+      birthDate: form.birthdate,
       email: form.email,
       password: form.password,
     };
-    
     await authStore.register(apiData);
-
   } catch(error) {
-    // A store já está configurada para mostrar o erro vindo da API
+    // A store já trata o erro, e o <template> irá exibi-lo
   } finally {
     isLoading.value = false;
   }
 };
+
+onUnmounted(() => {
+  authStore.clearError();
+});
 </script>

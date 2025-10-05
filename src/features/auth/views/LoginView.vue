@@ -11,11 +11,12 @@
     </div>
 
     <div class="flex-1 flex items-center justify-center p-4">
-      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 -mt-64">
+      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 -mt-16 md:-mt-64">
         
         <div class="hidden md:flex flex-col items-center justify-center w-1/2 p-8">
           <img 
-            src="/gatoCuidado.png" alt="Animal de estimação feliz" 
+            src="/gatoCuidado.png" 
+            alt="Animal de estimação feliz" 
             class="max-w-full h-auto rounded-lg shadow-xl"
           >
           <h2 class="text-4xl font-extrabold text-primary-foreground mt-6 text-center leading-tight">
@@ -46,6 +47,7 @@
                       placeholder="seu@email.com"
                       class="pl-10"
                       required
+                      @input="authStore.clearError()"
                     />
                   </div>
                 </div>
@@ -66,6 +68,7 @@
                       placeholder="••••••••"
                       class="pl-10"
                       required
+                      @input="authStore.clearError()"
                     />
                     <button
                       type="button"
@@ -81,6 +84,11 @@
                 <div class="flex items-center space-x-2">
                   <Checkbox id="remember" v-model="rememberMe" />
                   <Label for="remember" class="text-sm">Lembrar de mim</Label>
+                </div>
+
+                <div v-if="authStore.error" class="bg-destructive/10 p-3 rounded-md flex items-center gap-x-2 text-sm text-destructive">
+                  <AlertCircle class="h-4 w-4" />
+                  <p>{{ authStore.error }}</p>
                 </div>
 
                 <Button type="submit" class="w-full" :disabled="isLoading">
@@ -105,9 +113,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onUnmounted } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
-import { PawPrint as Paw, Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-vue-next'
+import { PawPrint as Paw, Eye, EyeOff, Mail, Lock, Loader2, AlertCircle } from 'lucide-vue-next'
 import { useAuthStore } from '@/stores/auth'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
@@ -129,16 +137,19 @@ const isLoading = ref(false)
 const handleLogin = async () => {
   isLoading.value = true;
   try {
-    // Chama a ação de login da store
     await authStore.login({
       email: email.value,
       password: password.value,
     });
-    // O redirecionamento já é feito dentro da store em caso de sucesso
   } catch (error) {
-    // A store já lida com o alerta de erro, não precisamos fazer nada aqui
+    // A store já trata o erro, não precisamos fazer nada aqui
   } finally {
     isLoading.value = false;
   }
 };
+
+// Limpa a mensagem de erro quando o componente é desmontado (ex: o utilizador navega para outra página)
+onUnmounted(() => {
+  authStore.clearError();
+});
 </script>
