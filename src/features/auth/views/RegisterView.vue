@@ -178,6 +178,7 @@ const handleRegister = async () => {
   }
 
   isLoading.value = true;
+  try {
     const apiData = { 
       fullName: form.fullName,
       cpf: form.cpf.replace(/\D/g, ''), // Envia o CPF sem máscara
@@ -185,5 +186,13 @@ const handleRegister = async () => {
       email: form.email,
       password: form.password,
     };
+    
+    await authStore.register(apiData);
+
+  } catch(error) {
+    // A store já está configurada para mostrar o erro vindo da API
+  } finally {
+    isLoading.value = false;
+  }
 };
 </script>
