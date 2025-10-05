@@ -108,7 +108,7 @@
 import { ref } from 'vue'
 import { useRouter, RouterLink } from 'vue-router'
 import { PawPrint as Paw, Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth' // Importe a store
+import { useAuthStore } from '@/stores/auth'
 import Button from '@/components/ui/Button.vue'
 import Input from '@/components/ui/Input.vue'
 import Label from '@/components/ui/Label.vue'
@@ -119,7 +119,7 @@ import CardFooter from '@/components/ui/CardFooter.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const router = useRouter()
-const authStore = useAuthStore() // Instancie a store
+const authStore = useAuthStore()
 const email = ref('')
 const password = ref('')
 const showPassword = ref(false)
@@ -129,12 +129,14 @@ const isLoading = ref(false)
 const handleLogin = async () => {
   isLoading.value = true;
   try {
+    // Chama a ação de login da store
     await authStore.login({
       email: email.value,
       password: password.value,
     });
+    // O redirecionamento já é feito dentro da store em caso de sucesso
   } catch (error) {
-    // A store já trata o alerta de erro
+    // A store já lida com o alerta de erro, não precisamos fazer nada aqui
   } finally {
     isLoading.value = false;
   }
