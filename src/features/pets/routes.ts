@@ -1,19 +1,19 @@
 export const petsRoutes = [
   {
-    // Esta será a página principal após o login
     path: '/pets',
     name: 'pets',
-    component: () => import('@/features/pets/views/PetView.vue')
+    component: () => import('@/features/pets/views/PetsView.vue')
   },
-  // Futuramente, as rotas de adicionar e detalhar pets virão aqui
-  // {
-  //   path: '/pets/add',
-  //   name: 'addPet',
-  //   component: () => import('@/features/pets/views/AddPetView.vue')
-  // },
-  // {
-  //   path: '/pets/:id',
-  //   name: 'petDetail',
-  //   component: () => import('@/features/pets/views/PetDetailView.vue')
-  // }
+  // Descomente e ative a rota para os detalhes do pet
+  {
+    path: '/pets/:id',
+    name: 'petDetail',
+    component: () => import('@/features/pets/views/PetDetailView.vue')
+  },
+  {
+    path: '/pets/add',
+    name: 'addPet',
+    // Se você criar uma página separada para adicionar pet, aponte aqui
+    // Por enquanto, o formulário está num modal, então esta rota pode não ser usada
+  },
 ]
