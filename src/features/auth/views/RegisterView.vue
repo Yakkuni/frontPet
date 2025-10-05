@@ -178,8 +178,6 @@ const handleRegister = async () => {
   }
 
   isLoading.value = true;
-  try {
-    // Monta o objeto com os nomes exatos que a API espera
     const apiData = { 
       fullName: form.fullName,
       cpf: form.cpf.replace(/\D/g, ''), // Envia o CPF sem máscara
@@ -187,16 +185,5 @@ const handleRegister = async () => {
       email: form.email,
       password: form.password,
     };
-    
-    // Log para depuração
-    console.log('Dados que estão a ser enviados para a API:', apiData);
-
-    await authStore.register(apiData);
-
-  } catch(error) {
-    // A store já está configurada para mostrar o erro vindo da API
-  } finally {
-    isLoading.value = false;
-  }
 };
 </script>
