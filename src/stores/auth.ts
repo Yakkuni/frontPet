@@ -2,39 +2,54 @@ import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { authService } from '@/api/authService';
+import axios from 'axios'; // Importe o axios para ter acesso aos tipos de erro
 
 export const useAuthStore = defineStore('auth', () => {
-  // Estado inicial: tenta pegar o token do localStorage
   const token = ref(localStorage.getItem('authToken'));
-  const user = ref(null); // Para guardar dados como nome, email, etc.
+  const user = ref(null);
   const router = useRouter();
 
-  // Getter para verificar se o usuário está autenticado
   const isAuthenticated = computed(() => !!token.value);
 
   async function login(credentials: { email: string; password: string }) {
+    // ... (sua função de login)
+  }
+
+  async function register(userData: any) {
     try {
-      const response = await authService.login(credentials);
+      const { confirmPassword, ...apiData } = userData;
+      await authService.register(apiData);
       
-      // Assumindo que a API retorna um objeto com uma propriedade 'token'
-      const newToken = response.data.token;
-
-      // Guarda o token no estado e no localStorage para persistência
-      token.value = newToken;
-      localStorage.setItem('authToken', newToken);
-
-      // (Opcional) Se a API retornar dados do usuário, guarde-os também
-      // user.value = response.data.user;
-
-      // Redireciona para a página de pets após o login
-      await router.push('/pets');
+      alert('Conta criada com sucesso! Por favor, faça o login.');
+      await router.push('/auth/login');
 
     } catch (error) {
-      console.error('Erro de login:', error);
-      // Limpa qualquer token antigo em caso de falha
-      localStorage.removeItem('authToken');
-      token.value = null;
-      alert('Email ou senha inválidos. Por favor, tente novamente.');
+      console.error('Erro de registro:', error);
+
+      // LÓGICA DE ERRO MELHORADA E MAIS DETALHADA
+      if (axios.isAxiosError(error) && error.response) {
+        // A API respondeu com um erro (4xx ou 5xx)
+        const responseData = error.response.data;
+        let errorMessage = 'Ocorreu um erro desconhecido.';
+
+        if (responseData && responseData.message) {
+          // Tenta pegar a mensagem principal do erro
+          errorMessage = responseData.message;
+        } else if (responseData && typeof responseData === 'object') {
+          // Se houver um objeto de erros (comum em validação), formata a mensagem
+          const errorDetails = Object.values(responseData).flat().join('\n');
+          errorMessage = errorDetails;
+        }
+        
+        alert(`Erro de registro:\n${errorMessage}`);
+
+      } else {
+        // Erro de rede ou outro erro genérico
+        alert('Não foi possível criar a conta. Verifique sua conexão e tente novamente.');
+      }
+      
+      // Re-lança o erro para que a interface saiba que a requisição falhou
+      throw error;
     }
   }
 
@@ -45,5 +60,5 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/auth/login');
   }
 
-  return { token, user, isAuthenticated, login, logout };
+  return { token, user, isAuthenticated, login, register, logout };
 });

@@ -37,8 +37,8 @@
             <CardContent>
               <form @submit.prevent="handleRegister" class="space-y-4">
                 <div class="space-y-2">
-                  <Label for="name">Nome completo</Label>
-                  <Input id="name" v-model="form.name" placeholder="Digite seu nome completo" required />
+                  <Label for="fullName">Nome completo</Label>
+                  <Input id="fullName" v-model="form.fullName" placeholder="Digite seu nome completo" required />
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -128,10 +128,10 @@
   </div>
 </template>
 
-<script setup lang="ts">
-import { ref, reactive } from 'vue';
+<script setup lang="ts">import { ref, reactive } from 'vue';
 import { useRouter, RouterLink } from 'vue-router';
 import { PawPrint as Paw } from 'lucide-vue-next';
+import { useAuthStore } from '@/stores/auth';
 import Card from '@/components/ui/Card.vue';
 import CardContent from '@/components/ui/CardContent.vue';
 import CardFooter from '@/components/ui/CardFooter.vue';
@@ -142,14 +142,15 @@ import Button from '@/components/ui/Button.vue';
 import ThemeToggle from '@/components/ThemeToggle.vue';
 
 const router = useRouter();
+const authStore = useAuthStore();
 const isLoading = ref(false);
 const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
 const form = reactive({
-  name: '',
+  fullName: '',
   cpf: '',
-  birthdate: '', // Propriedade para a data de nascimento
+  birthdate: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -176,11 +177,21 @@ const handleRegister = async () => {
   }
 
   isLoading.value = true;
-  setTimeout(() => {
+  try {
+    // Renomeia 'birthdate' para 'birthDate' antes de enviar para a API
+    const apiData = { 
+      ...form, 
+      cpf: form.cpf.replace(/\D/g, ''),
+      birthDate: form.birthdate // Renomeando o campo
+    };
+    // A propriedade 'birthdate' original não é mais necessária no objeto enviado
+    delete (apiData as any).birthdate;
+
+    await authStore.register(apiData);
+  } catch(error) {
+    // A store já lida com o alerta de erro, não precisamos fazer nada aqui
+  } finally {
     isLoading.value = false;
-    console.log('Dados de registro:', form);
-    alert('Conta criada com sucesso!');
-    router.push('/onboarding');
-  }, 1500);
+  }
 };
 </script>

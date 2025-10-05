@@ -3,7 +3,7 @@ import axios from 'axios';
 // Crie uma instância do axios
 const apiClient = axios.create({
   // URL base da sua API
-  baseURL: 'https://api.zampet.dev.cybercore.dev.br', 
+  baseURL: '/api', 
   headers: {
     'Content-Type': 'application/json',
   },
