@@ -11,7 +11,7 @@
     </div>
 
     <div class="flex-1 flex items-center justify-center p-4">
-      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 -mt-16 md:-mt-64">
+      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 md:-mt-64">
         
         <div class="hidden md:flex flex-col items-center justify-center w-1/2 p-8">
           <img 
@@ -47,7 +47,6 @@
                       placeholder="seu@email.com"
                       class="pl-10"
                       required
-                      @input="authStore.clearError()"
                     />
                   </div>
                 </div>
@@ -68,7 +67,6 @@
                       placeholder="••••••••"
                       class="pl-10"
                       required
-                      @input="authStore.clearError()"
                     />
                     <button
                       type="button"
@@ -84,11 +82,6 @@
                 <div class="flex items-center space-x-2">
                   <Checkbox id="remember" v-model="rememberMe" />
                   <Label for="remember" class="text-sm">Lembrar de mim</Label>
-                </div>
-
-                <div v-if="authStore.error" class="bg-destructive/10 p-3 rounded-md flex items-center gap-x-2 text-sm text-destructive">
-                  <AlertCircle class="h-4 w-4" />
-                  <p>{{ authStore.error }}</p>
                 </div>
 
                 <Button type="submit" class="w-full" :disabled="isLoading">
@@ -113,26 +106,26 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onUnmounted } from 'vue'
-import { useRouter, RouterLink } from 'vue-router'
-import { PawPrint as Paw, Eye, EyeOff, Mail, Lock, Loader2, AlertCircle } from 'lucide-vue-next'
-import { useAuthStore } from '@/stores/auth'
-import Button from '@/components/ui/Button.vue'
-import Input from '@/components/ui/Input.vue'
-import Label from '@/components/ui/Label.vue'
-import Checkbox from '@/components/ui/Checkbox.vue'
-import Card from '@/components/ui/Card.vue'
-import CardContent from '@/components/ui/CardContent.vue'
-import CardFooter from '@/components/ui/CardFooter.vue'
-import ThemeToggle from '@/components/ThemeToggle.vue'
+import { ref } from 'vue';
+import { useRouter, RouterLink } from 'vue-router';
+import { PawPrint as Paw, Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-vue-next';
+import { useAuthStore } from '@/stores/auth';
+import Button from '@/components/ui/Button.vue';
+import Input from '@/components/ui/Input.vue';
+import Label from '@/components/ui/Label.vue';
+import Checkbox from '@/components/ui/Checkbox.vue';
+import Card from '@/components/ui/Card.vue';
+import CardContent from '@/components/ui/CardContent.vue';
+import CardFooter from '@/components/ui/CardFooter.vue';
+import ThemeToggle from '@/components/ThemeToggle.vue';
 
-const router = useRouter()
-const authStore = useAuthStore()
-const email = ref('')
-const password = ref('')
-const showPassword = ref(false)
-const rememberMe = ref(false)
-const isLoading = ref(false)
+const router = useRouter();
+const authStore = useAuthStore();
+const email = ref('');
+const password = ref('');
+const showPassword = ref(false);
+const rememberMe = ref(false);
+const isLoading = ref(false);
 
 const handleLogin = async () => {
   isLoading.value = true;
@@ -142,14 +135,9 @@ const handleLogin = async () => {
       password: password.value,
     });
   } catch (error) {
-    // A store já trata o erro, não precisamos fazer nada aqui
+    // A store já trata o alerta de erro
   } finally {
     isLoading.value = false;
   }
 };
-
-// Limpa a mensagem de erro quando o componente é desmontado (ex: o utilizador navega para outra página)
-onUnmounted(() => {
-  authStore.clearError();
-});
 </script>
