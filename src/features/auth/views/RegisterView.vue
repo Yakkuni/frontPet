@@ -38,12 +38,23 @@
               <form @submit.prevent="handleRegister" class="space-y-4">
                 <div class="space-y-2">
                   <Label for="name">Nome completo</Label>
-                  <Input id="name" v-model="form.name" placeholder="Digite seu nome completo" />
+                  <Input id="name" v-model="form.name" placeholder="Digite seu nome completo" required />
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div class="space-y-2">
+                    <Label for="cpf">CPF</Label>
+                    <Input id="cpf" v-model="form.cpf" @input="formatCPF" placeholder="000.000.000-00" maxlength="14" required />
+                  </div>
+                  <div class="space-y-2">
+                    <Label for="birthdate">Data de Nascimento</Label>
+                    <Input id="birthdate" type="date" v-model="form.birthdate" required />
+                  </div>
                 </div>
 
                 <div class="space-y-2">
                   <Label for="email">Email</Label>
-                  <Input id="email" type="email" v-model="form.email" placeholder="Digite seu email" />
+                  <Input id="email" type="email" v-model="form.email" placeholder="Digite seu email" required />
                 </div>
 
                 <div class="space-y-2">
@@ -54,6 +65,7 @@
                       :type="showPassword ? 'text' : 'password'"
                       v-model="form.password"
                       placeholder="Digite sua senha"
+                      required
                     />
                     <button
                       type="button"
@@ -74,6 +86,7 @@
                       :type="showConfirmPassword ? 'text' : 'password'"
                       v-model="form.confirmPassword"
                       placeholder="Confirme sua senha"
+                      required
                     />
                     <button
                       type="button"
@@ -135,11 +148,22 @@ const showConfirmPassword = ref(false);
 
 const form = reactive({
   name: '',
+  cpf: '',
+  birthdate: '', // Propriedade para a data de nascimento
   email: '',
   password: '',
   confirmPassword: '',
   acceptTerms: false
 });
+
+const formatCPF = (event: Event) => {
+  const input = event.target as HTMLInputElement;
+  let value = input.value.replace(/\D/g, '');
+  value = value.replace(/(\d{3})(\d)/, '$1.$2');
+  value = value.replace(/(\d{3})(\d)/, '$1.$2');
+  value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
+  form.cpf = value;
+};
 
 const handleRegister = async () => {
   if (!form.acceptTerms) {
@@ -154,6 +178,7 @@ const handleRegister = async () => {
   isLoading.value = true;
   setTimeout(() => {
     isLoading.value = false;
+    console.log('Dados de registro:', form);
     alert('Conta criada com sucesso!');
     router.push('/onboarding');
   }, 1500);
