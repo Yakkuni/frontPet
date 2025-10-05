@@ -25,8 +25,6 @@ apiClient.interceptors.request.use(
       config.headers['Authorization'] = `Bearer ${token}`;
     }
     
-    console.log('Enviando requisição com cabeçalho Bearer:', config.headers);
-    
     return config;
   },
   (error) => {
