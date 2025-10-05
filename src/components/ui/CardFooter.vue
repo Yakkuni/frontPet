@@ -1,9 +1,10 @@
 <template>
-  <div class="border-t px-6 py-4">
+  <div :class="cn('flex items-center p-6 pt-0', $attrs.class as string)">
     <slot />
   </div>
 </template>
 
 <script setup lang="ts">
-// Componente para o rodapé do Card
+import { cn } from '@/utils';
+// A diretiva `inheritAttrs: false` não é necessária no <script setup> por padrão
 </script>
