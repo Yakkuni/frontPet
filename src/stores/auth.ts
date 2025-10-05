@@ -1,14 +1,15 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
-import { useRouter } from 'vue-router';
+import router from '@/router';
 import { authService } from '@/api/authService';
 import axios from 'axios';
+import { tr } from 'date-fns/locale';
 
 export const useAuthStore = defineStore('auth', () => {
   const token = ref(localStorage.getItem('authToken'));
   const user = ref(null);
   const error = ref<string | null>(null);
-  const router = useRouter();
+  const isLoggingOut = ref(false);
 
   const isAuthenticated = computed(() => !!token.value);
 
@@ -16,12 +17,13 @@ export const useAuthStore = defineStore('auth', () => {
     error.value = null;
   }
 
-  async function login(credentials: { email: string; password: string }) {
+  async function login(credentials: { email: string; password:string }) {
     error.value = null;
     try {
       const response = await authService.login(credentials);
       const newToken = response.data.data.token;
       if (!newToken) throw new Error("Token não encontrado");
+
       token.value = newToken;
       localStorage.setItem('authToken', newToken);
       await router.push('/pets');
@@ -39,17 +41,12 @@ export const useAuthStore = defineStore('auth', () => {
   }
 
   async function register(userData: any) {
-    error.value = null; // Limpa erros antigos
+    error.value = null;
     try {
       const { confirmPassword, ...apiData } = userData;
       await authService.register(apiData);
-      
-      // Remove o alert de sucesso para um fluxo mais limpo
-      // alert('Conta criada com sucesso! Por favor, faça o login.');
       await router.push({ name: 'login', query: { registered: 'true' } });
-
     } catch (err) {
-      // Guarda a mensagem de erro no estado
       if (axios.isAxiosError(err) && err.response) {
         const responseData = err.response.data;
         error.value = responseData?.message || 'Ocorreu um erro desconhecido.';
@@ -61,12 +58,22 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  function logout() {
-    token.value = null;
-    user.value = null;
-    localStorage.removeItem('authToken');
-    router.push('/auth/login');
+  async function logout() {
+    isLoggingOut.value = true;
+    try {
+      if (token.value) {
+        await authService.logout();
+      }
+    } catch (err) {
+      console.error("Erro ao invalidar o token na API:", err);
+    } finally {
+      token.value = null;
+      user.value = null;
+      localStorage.removeItem('authToken');
+      isLoggingOut.value = false;
+      await router.push('/auth/login');
+    }
   }
 
-  return { token, user, error, isAuthenticated, login, register, logout, clearError };
+  return { token, user, error, isLoggingOut, isAuthenticated, login, register, logout, clearError };
 });

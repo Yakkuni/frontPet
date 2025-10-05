@@ -10,4 +10,10 @@ export const authService = {
   register(userData: any) {
     return apiClient.post('/v0/auth/register', userData);
   },
+
+  logout() {
+    return apiClient.post('/v0/auth/logout', {}, {
+      headers: {Authorization: `Bearer ${localStorage.getItem('authToken')}`},
+    });
+  }
 };
