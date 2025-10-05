@@ -11,12 +11,11 @@
     </div>
 
     <div class="flex-1 flex items-center justify-center p-4">
-      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 md:-mt-64">
+      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 -mt-64">
         
         <div class="hidden md:flex flex-col items-center justify-center w-1/2 p-8">
           <img 
-            src="/gatoCuidado.png" 
-            alt="Animal de estimação feliz" 
+            src="/gatoCuidado.png" alt="Animal de estimação feliz" 
             class="max-w-full h-auto rounded-lg shadow-xl"
           >
           <h2 class="text-4xl font-extrabold text-primary-foreground mt-6 text-center leading-tight">
@@ -106,36 +105,38 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import { useRouter, RouterLink } from 'vue-router';
-import { PawPrint as Paw, Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-vue-next';
-import { useAuthStore } from '@/stores/auth';
-import Button from '@/components/ui/Button.vue';
-import Input from '@/components/ui/Input.vue';
-import Label from '@/components/ui/Label.vue';
-import Checkbox from '@/components/ui/Checkbox.vue';
-import Card from '@/components/ui/Card.vue';
-import CardContent from '@/components/ui/CardContent.vue';
-import CardFooter from '@/components/ui/CardFooter.vue';
-import ThemeToggle from '@/components/ThemeToggle.vue';
+import { ref } from 'vue'
+import { useRouter, RouterLink } from 'vue-router'
+import { PawPrint as Paw, Eye, EyeOff, Mail, Lock, Loader2 } from 'lucide-vue-next'
+import { useAuthStore } from '@/stores/auth'
+import Button from '@/components/ui/Button.vue'
+import Input from '@/components/ui/Input.vue'
+import Label from '@/components/ui/Label.vue'
+import Checkbox from '@/components/ui/Checkbox.vue'
+import Card from '@/components/ui/Card.vue'
+import CardContent from '@/components/ui/CardContent.vue'
+import CardFooter from '@/components/ui/CardFooter.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
-const router = useRouter();
-const authStore = useAuthStore();
-const email = ref('');
-const password = ref('');
-const showPassword = ref(false);
-const rememberMe = ref(false);
-const isLoading = ref(false);
+const router = useRouter()
+const authStore = useAuthStore()
+const email = ref('')
+const password = ref('')
+const showPassword = ref(false)
+const rememberMe = ref(false)
+const isLoading = ref(false)
 
 const handleLogin = async () => {
   isLoading.value = true;
   try {
+    // Chama a ação de login da store
     await authStore.login({
       email: email.value,
       password: password.value,
     });
+    // O redirecionamento já é feito dentro da store em caso de sucesso
   } catch (error) {
-    // A store já trata o alerta de erro
+    // A store já lida com o alerta de erro, não precisamos fazer nada aqui
   } finally {
     isLoading.value = false;
   }

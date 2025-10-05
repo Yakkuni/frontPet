@@ -11,7 +11,7 @@
     </div>
 
     <div class="flex-1 flex items-center justify-center p-4">
-      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 md:-mt-64">
+      <div class="w-full max-w-4xl flex items-center justify-center space-x-8 -mt-64">
         
         <div class="hidden md:flex flex-col items-center justify-center w-1/2 p-8">
           <img 
@@ -37,8 +37,8 @@
             <CardContent>
               <form @submit.prevent="handleRegister" class="space-y-4">
                 <div class="space-y-2">
-                  <Label for="name">Nome completo</Label>
-                  <Input id="name" v-model="form.name" placeholder="Digite seu nome completo" required />
+                  <Label for="fullName">Nome completo</Label>
+                  <Input id="fullName" v-model="form.fullName" placeholder="Digite seu nome completo" required />
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -47,8 +47,8 @@
                     <Input id="cpf" v-model="form.cpf" @input="formatCPF" placeholder="000.000.000-00" maxlength="14" required />
                   </div>
                   <div class="space-y-2">
-                    <Label for="birthdate">Data de Nascimento</Label>
-                    <Input id="birthdate" type="date" v-model="form.birthdate" required />
+                    <Label for="birthDate">Data de Nascimento</Label>
+                    <Input id="birthDate" type="date" v-model="form.birthDate" required />
                   </div>
                 </div>
 
@@ -149,9 +149,9 @@ const showPassword = ref(false);
 const showConfirmPassword = ref(false);
 
 const form = reactive({
-  name: '',
+  fullName: '',
   cpf: '',
-  birthdate: '',
+  birthDate: '',
   email: '',
   password: '',
   confirmPassword: '',
@@ -160,7 +160,7 @@ const form = reactive({
 
 const formatCPF = (event: Event) => {
   const input = event.target as HTMLInputElement;
-  let value = input.value.replace(/\D/g, '');
+  let value = input.value.replace(/\D/g, ''); // Remove tudo que não é dígito
   value = value.replace(/(\d{3})(\d)/, '$1.$2');
   value = value.replace(/(\d{3})(\d)/, '$1.$2');
   value = value.replace(/(\d{3})(\d{1,2})$/, '$1-$2');
@@ -179,16 +179,22 @@ const handleRegister = async () => {
 
   isLoading.value = true;
   try {
+    // Monta o objeto com os nomes exatos que a API espera
     const apiData = { 
-      fullName: form.name,
-      cpf: form.cpf.replace(/\D/g, ''),
-      birthDate: form.birthdate,
+      fullName: form.fullName,
+      cpf: form.cpf.replace(/\D/g, ''), // Envia o CPF sem máscara
+      birthDate: form.birthDate,
       email: form.email,
       password: form.password,
     };
+    
+    // Log para depuração
+    console.log('Dados que estão a ser enviados para a API:', apiData);
+
     await authStore.register(apiData);
+
   } catch(error) {
-    // A store já trata o alerta de erro
+    // A store já está configurada para mostrar o erro vindo da API
   } finally {
     isLoading.value = false;
   }
