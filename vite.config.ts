@@ -10,19 +10,23 @@ export default defineConfig({
     },
   },
   server: {
-    host: true,
+    host: true, 
+    // Lista de hosts permitidos (útil em alguns ambientes)
     allowedHosts: ['app.zampet.dev.cybercore.dev.br'],
+    
+    // Configuração do Proxy para evitar erros de CORS
     proxy: {
       '/api': {
         target: 'https://api.zampet.dev.cybercore.dev.br',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ''),
-
-        // --- ADICIONE ESTA LINHA ---
-        // Desativa a validação do certificado SSL, essencial para targets https em desenvolvimento
         secure: false, 
-
       },
+    },
+
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
     },
   },
 })

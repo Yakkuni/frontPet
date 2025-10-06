@@ -1,7 +1,7 @@
 <template>
   <form @submit.prevent="handleSubmit" class="space-y-6">
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
-      <div class="space-y-2 md:col-span-2">
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
+      <div class="space-y-2 sm:col-span-2">
         <Label for="photo">Foto do Pet</Label>
         <div class="flex items-center gap-4">
           <div class="w-24 h-24 bg-muted rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center">
@@ -16,55 +16,63 @@
         <Label for="name">Nome do Pet *</Label>
         <Input id="name" v-model="pet.name" required />
       </div>
+      
       <div class="space-y-2">
-        <Label for="breed">Raça *</Label>
+        <Label for="dob">Data de Nascimento *</Label>
+        <Input id="dob" type="date" v-model="pet.dob" required />
+      </div>
+
+      <div class="space-y-2">
+        <Label for="species">Espécie *</Label>
+        <select 
+          id="species"
+          v-model="pet.species"
+          class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+          required
+        >
+          <option :value="null" disabled>Selecione uma espécie</option>
+          <option v-for="s in speciesStore.allSpeciesData" :key="s.uuid" :value="s.uuid">
+            {{ s.descricao }}
+          </option>
+        </select>
+      </div>
+
+      <div class="space-y-2">
+        <Label for="breed" :class="!pet.species ? 'opacity-50' : ''">Raça *</Label>
         <Combobox
           v-model="pet.breed"
           :options="breedOptions"
-          placeholder="Selecione ou digite a raça"
+          :disabled="!pet.species"
+          placeholder="Selecione uma raça existente ou digite uma nova"
         />
+
+        <!-- Mensagens de status -->
+        <div class="mt-1 text-sm">
+          <p v-if="isExistingBreed" class="text-green-600 flex items-center gap-1">
+            ✓ Raça existente selecionada
+          </p>
+
+          <div v-else-if="showCreateBreedPrompt" class="text-blue-600 flex flex-col gap-2">
+            <span>❓ Deseja criar essa raça "{{ newBreedName }}"?</span>
+            <button 
+              type="button"
+              class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 w-fit"
+              @click="confirmCreateBreed"
+            >
+              Criar Raça
+            </button>
+          </div>
+
+          <p v-else-if="pet.breed && pet.breed.length < 2 && pet.species" 
+             class="text-gray-500 flex items-center gap-1">
+            ⌨️ Digite pelo menos 2 caracteres para buscar ou criar raça
+          </p>
+        </div>
       </div>
-      <div class="space-y-2">
-        <Label for="dob">Data de Nascimento</Label>
-        <Input id="dob" type="date" v-model="pet.dob" @input="calculateAge" />
-      </div>
-      <div class="space-y-2">
-        <Label for="age">Idade (anos) *</Label>
-        <Input id="age" type="number" v-model.number="pet.age" required min="0" />
-      </div>
-      <div class="space-y-2 md:col-span-2">
+      
+      <div class="space-y-2 sm:col-span-2">
         <Label for="weight">Peso (kg)</Label>
         <Input id="weight" type="number" step="0.1" v-model.number="pet.weight" min="0" />
-      </div>
-    </div>
-
-    <div>
-      <h3 class="font-medium mb-2">Vacinas</h3>
-      <div class="space-y-4 rounded-lg border p-4">
-        <div v-if="pet.vaccines.length === 0" class="text-center text-sm text-muted-foreground">
-          Nenhuma vacina adicionada.
-        </div>
-        <div v-for="(vaccine, index) in pet.vaccines" :key="index" class="flex items-end gap-2">
-          <div class="flex-1 space-y-2">
-            <Label :for="'vaccine-name-' + index">Nome da Vacina</Label>
-            <Combobox
-              :id="'vaccine-name-' + index"
-              v-model="vaccine.name"
-              :options="vaccineOptions"
-              placeholder="Selecione a vacina"
-            />
-          </div>
-          <div class="space-y-2">
-            <Label :for="'vaccine-date-' + index">Data de Aplicação</Label>
-            <Input :id="'vaccine-date-' + index" type="date" v-model="vaccine.date" />
-          </div>
-          <Button type="button" variant="destructive" size="icon" @click="removeVaccine(index)">
-            <Trash2 class="h-4 w-4" />
-          </Button>
-        </div>
-        <Button type="button" variant="outline" class="w-full" @click="addVaccine">
-          <Plus class="h-4 w-4 mr-2" /> Adicionar Vacina
-        </Button>
       </div>
     </div>
 
@@ -73,18 +81,19 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, computed, ref } from 'vue';
-import { differenceInYears } from 'date-fns';
-import { Plus, Trash2, User } from 'lucide-vue-next';
+import { reactive, computed, ref, onMounted, watch } from 'vue';
+import { useSpeciesStore } from '@/stores/species';
+import { petsService } from '@/api/petsService';
+import { User } from 'lucide-vue-next';
 import Input from '@/components/ui/Input.vue';
 import Label from '@/components/ui/Label.vue';
-import Button from '@/components/ui/Button.vue';
 import Combobox from '@/components/ui/Combobox.vue';
 
-// Lógica para upload e pré-visualização da foto
+const speciesStore = useSpeciesStore();
+
+// --- LÓGICA DA FOTO ---
 const photoPreview = ref<string | null>(null);
 const photoFile = ref<File | null>(null);
-
 function handleFileChange(event: Event) {
   const target = event.target as HTMLInputElement;
   const file = target.files?.[0];
@@ -94,65 +103,138 @@ function handleFileChange(event: Event) {
   }
 }
 
-// Mock de dados
-const breedOptions = [
-  { value: 'srd', label: 'SRD (Sem Raça Definida)' },
-  { value: 'poodle', label: 'Poodle' },
-  { value: 'labrador', label: 'Labrador Retriever' },
-  { value: 'golden', label: 'Golden Retriever' },
-  { value: 'bulldog', label: 'Bulldog Francês' },
-  { value: 'shih_tzu', label: 'Shih Tzu' },
-  { value: 'persa', label: 'Gato Persa' },
-  { value: 'siames', label: 'Gato Siamês' },
-  { value: 'maine_coon', label: 'Gato Maine Coon' },
-];
-
-const vaccineOptions = [
-  { value: 'polivalente_v8', label: 'Polivalente V8 (Cães)' },
-  { value: 'polivalente_v10', label: 'Polivalente V10 (Cães)' },
-  { value: 'antirrabica', label: 'Antirrábica' },
-  { value: 'gripe_canina', label: 'Gripe Canina' },
-  { value: 'giardia', label: 'Giárdia' },
-  { value: 'quadrupla_felina', label: 'Quádrupla Felina (V4)' },
-  { value: 'quintupla_felina', label: 'Quíntupla Felina (V5)' },
-];
-
-type Vaccine = { name: string | null; date: string | null };
-
+// --- ESTADO DO FORMULÁRIO ---
 const pet = reactive({
   name: '',
+  species: null as string | null,
   breed: null as string | null,
   dob: '',
-  age: null as number | null,
-  weight: null as number | null,
-  vaccines: [] as Vaccine[],
+  weight: undefined as number | undefined,
 });
 
-const isFormValid = computed(() => !!pet.name && !!pet.breed && pet.age !== null && pet.age >= 0);
+// --- OPÇÕES DE RAÇA ---
+const breedOptions = computed(() => {
+  if (!pet.species) return [];
+  const selectedSpecies = speciesStore.allSpeciesData.find(s => s.uuid === pet.species);
+  if (!selectedSpecies || !selectedSpecies.racas) return [];
 
-function calculateAge() {
-  if (pet.dob) {
-    pet.age = differenceInYears(new Date(), new Date(pet.dob));
+  const existingBreeds = selectedSpecies.racas
+    .filter(r => r && r.uuid && r.descricao)
+    .map(r => ({ value: r.uuid, label: r.descricao }));
+
+  return existingBreeds;
+});
+
+// --- VERIFICAÇÕES ---
+const isExistingBreed = computed(() => {
+  if (!pet.breed || !pet.species) return false;
+  const selectedSpecies = speciesStore.allSpeciesData.find(s => s.uuid === pet.species);
+  if (!selectedSpecies || !selectedSpecies.racas) return false;
+  return selectedSpecies.racas.some(r => r && r.uuid === pet.breed);
+});
+
+const newBreedName = computed(() => {
+  if (pet.breed && typeof pet.breed === 'string') return pet.breed.trim();
+  return '';
+});
+
+// --- Mostrar o prompt de criação ---
+const showCreateBreedPrompt = computed(() => {
+  return (
+    pet.species &&
+    typeof pet.breed === 'string' &&
+    pet.breed.trim().length >= 2 &&
+    !isExistingBreed.value
+  );
+});
+
+// --- Confirmação manual de criação ---
+async function confirmCreateBreed() {
+  const confirmed = confirm(`Deseja criar a raça "${newBreedName.value}"?`);
+  if (confirmed) {
+    await createNewBreed();
   }
 }
 
-function addVaccine() {
-  pet.vaccines.push({ name: null, date: null });
-}
-function removeVaccine(index: number) {
-  pet.vaccines.splice(index, 1);
+// --- Criação de nova raça ---
+async function createNewBreed() {
+  if (!pet.species || !newBreedName.value) return null;
+
+  try {
+    // Use petsService so apiClient interceptor adds Authorization header
+    const response = await petsService.createBreed({
+      especie_uuid: pet.species,
+      descricao: newBreedName.value,
+    });
+
+    const data = response.data;
+    console.log('Resposta da criação de nova raça:', data);
+
+    if (data?.status === 'success' && data?.data?.uuid) {
+      pet.breed = data.data.uuid;
+
+      const species = speciesStore.allSpeciesData.find(s => s.uuid === pet.species);
+      if (species && Array.isArray(species.racas)) {
+        // A interface Breed exige um `id:number` — adicionamos um id temporário 0.
+        species.racas.push({
+          id: 0,
+          uuid: String(data.data.uuid),
+          descricao: String(data.data.descricao),
+        });
+      }
+
+      alert(`Raça "${data.data.descricao}" criada com sucesso!`);
+      return data.data.uuid;
+    } else {
+      alert('Erro ao criar nova raça. Verifique os dados e tente novamente.');
+      return null;
+    }
+  } catch (error) {
+    console.error('Erro ao criar nova raça:', error);
+    alert('Erro ao comunicar com o servidor.');
+    return null;
+  }
 }
 
-function handleSubmit() {
+// --- Validação geral ---
+const isFormValid = computed(() => {
+  return !!pet.name && !!pet.species && !!pet.breed && !!pet.dob;
+});
+
+// --- Envio do formulário ---
+async function handleSubmit() {
   if (!isFormValid.value) {
     alert('Por favor, preencha os campos obrigatórios (*).');
     return;
   }
-  
-  // Em uma aplicação real, você faria o upload do 'photoFile' para um servidor
-  console.log('Pet salvo:', { ...pet, photo: photoFile.value?.name });
-  alert(`Pet "${pet.name}" adicionado com sucesso!`);
+
+  // Se a raça digitada não existir, cria automaticamente antes de enviar
+  if (!isExistingBreed.value && typeof pet.breed === 'string') {
+    const confirmed = confirm(`A raça "${pet.breed}" não existe. Deseja criá-la agora?`);
+    if (confirmed) {
+      const newBreedUuid = await createNewBreed();
+      if (!newBreedUuid) return;
+    } else {
+      return; // cancela o envio
+    }
+  }
+
+  const apiData: any = {
+    nome: pet.name,
+    data_nascimento: pet.dob,
+    especie_uuid: pet.species,
+    raca_uuid: pet.breed,
+  };
+
+  if (pet.weight) apiData.peso = pet.weight;
+
+  console.log('Dados a serem enviados para a API:', apiData);
+  alert(`Pet "${pet.name}" pronto para ser salvo!`);
 }
+
+onMounted(() => {
+  speciesStore.fetchSpeciesAndBreeds();
+});
 
 defineExpose({ handleSubmit });
 </script>

@@ -46,12 +46,15 @@ type ComboboxOption = {
 };
 
 const props = defineProps<{
+  // modelValue can be an existing option value (uuid) or free text typed by the user
   modelValue: string | null;
   options: ComboboxOption[];
   placeholder?: string;
 }>();
 
-const emit = defineEmits(['update:modelValue']);
+const emit = defineEmits<{
+  (e: 'update:modelValue', value: string | null): void;
+}>();
 
 const isOpen = ref(false);
 const searchTerm = ref('');
@@ -60,8 +63,14 @@ const inputRef = ref<typeof Input | null>(null);
 const highlightedIndex = ref(-1);
 
 const filteredOptions = computed(() => {
-  if (!searchTerm.value) return props.options;
-  return props.options.filter(option =>
+  // Filtra opções inválidas primeiro
+  const validOptions = props.options.filter(option => 
+    option && option.label && option.value
+  );
+  
+  if (!searchTerm.value) return validOptions;
+  
+  return validOptions.filter(option =>
     option.label.toLowerCase().includes(searchTerm.value.toLowerCase())
   );
 });
@@ -73,31 +82,42 @@ async function onInput(event: Event) {
   isOpen.value = true;
   highlightedIndex.value = 0;
 
+  // Always emit the typed text so parent can react and add a "new" option
   if (!originalValue) {
     emit('update:modelValue', null);
     return;
   }
-  
+
+  emit('update:modelValue', originalValue);
+
   const firstMatch = filteredOptions.value[0];
   if (firstMatch && firstMatch.label.toLowerCase().startsWith(originalValue.toLowerCase())) {
+    // Autocomplete visual helper but still keep modelValue as the typed text
     searchTerm.value = firstMatch.label;
     await nextTick();
     input.value = firstMatch.label;
     input.setSelectionRange(originalValue.length, firstMatch.label.length);
-  } else {
-    emit('update:modelValue', null);
   }
 }
 
 function selectOption(option: ComboboxOption) {
+  if (!option || !option.label || !option.value) {
+    console.error('Invalid option passed to selectOption:', option);
+    return;
+  }
+  
   searchTerm.value = option.label;
   emit('update:modelValue', option.value);
   isOpen.value = false;
 }
 
 function selectHighlightedOption() {
-    if (isOpen.value && highlightedIndex.value >= 0) {
-        selectOption(filteredOptions.value[highlightedIndex.value]);
+    if (isOpen.value && highlightedIndex.value >= 0 && 
+        highlightedIndex.value < filteredOptions.value.length) {
+        const selectedOption = filteredOptions.value[highlightedIndex.value];
+        if (selectedOption && selectedOption.label && selectedOption.value) {
+            selectOption(selectedOption);
+        }
     }
 }
 

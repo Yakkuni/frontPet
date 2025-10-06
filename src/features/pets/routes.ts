@@ -15,5 +15,5 @@ export const petsRoutes = [
     name: 'addPet',
     // Se você criar uma página separada para adicionar pet, aponte aqui
     // Por enquanto, o formulário está num modal, então esta rota pode não ser usada
-  },
+  }
 ]
