@@ -1,16 +1,7 @@
 <template>
   <form @submit.prevent="handleSubmit" class="space-y-6">
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-6">
-      <div class="space-y-2 sm:col-span-2">
-        <Label for="photo">Foto do Pet</Label>
-        <div class="flex items-center gap-4">
-          <div class="w-24 h-24 bg-muted rounded-full flex-shrink-0 overflow-hidden flex items-center justify-center">
-            <img v-if="photoPreview" :src="photoPreview" alt="Pré-visualização do pet" class="w-full h-full object-cover">
-            <User class="w-12 h-12 text-muted-foreground" v-else />
-          </div>
-          <Input id="photo" type="file" @change="handleFileChange" accept="image/*" class="flex-1" />
-        </div>
-      </div>
+      <!-- Foto removida conforme solicitado -->
 
       <div class="space-y-2">
         <Label for="name">Nome do Pet *</Label>
@@ -71,8 +62,22 @@
       </div>
       
       <div class="space-y-2 sm:col-span-2">
-        <Label for="weight">Peso (kg)</Label>
-        <Input id="weight" type="number" step="0.1" v-model.number="pet.weight" min="0" />
+        <Label for="sex">Sexo *</Label>
+        <select
+          id="sex"
+          v-model="pet.sex"
+          required
+          class="flex h-10 w-full items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <option :value="null" disabled>Selecione o sexo</option>
+          <option value="M">Macho</option>
+          <option value="F">Fêmea</option>
+        </select>
+      </div>
+
+      <div class="space-y-2 sm:col-span-2">
+        <Label for="registro">Registro Geral Animal</Label>
+        <Input id="registro" v-model="pet.registro" placeholder="Número de registro (opcional)" />
       </div>
     </div>
 
@@ -84,24 +89,13 @@
 import { reactive, computed, ref, onMounted, watch } from 'vue';
 import { useSpeciesStore } from '@/stores/species';
 import { petsService } from '@/api/petsService';
-import { User } from 'lucide-vue-next';
 import Input from '@/components/ui/Input.vue';
 import Label from '@/components/ui/Label.vue';
 import Combobox from '@/components/ui/Combobox.vue';
 
 const speciesStore = useSpeciesStore();
 
-// --- LÓGICA DA FOTO ---
-const photoPreview = ref<string | null>(null);
-const photoFile = ref<File | null>(null);
-function handleFileChange(event: Event) {
-  const target = event.target as HTMLInputElement;
-  const file = target.files?.[0];
-  if (file) {
-    photoFile.value = file;
-    photoPreview.value = URL.createObjectURL(file);
-  }
-}
+// Foto removida: não armazenamos preview nem arquivo no formulário
 
 // --- ESTADO DO FORMULÁRIO ---
 const pet = reactive({
@@ -109,7 +103,8 @@ const pet = reactive({
   species: null as string | null,
   breed: null as string | null,
   dob: '',
-  weight: undefined as number | undefined,
+  sex: null as string | null,
+  registro: '',
 });
 
 // --- OPÇÕES DE RAÇA ---
@@ -168,7 +163,6 @@ async function createNewBreed() {
     });
 
     const data = response.data;
-    console.log('Resposta da criação de nova raça:', data);
 
     if (data?.status === 'success' && data?.data?.uuid) {
       pet.breed = data.data.uuid;
@@ -182,16 +176,12 @@ async function createNewBreed() {
           descricao: String(data.data.descricao),
         });
       }
-
-      alert(`Raça "${data.data.descricao}" criada com sucesso!`);
       return data.data.uuid;
     } else {
-      alert('Erro ao criar nova raça. Verifique os dados e tente novamente.');
       return null;
     }
   } catch (error) {
     console.error('Erro ao criar nova raça:', error);
-    alert('Erro ao comunicar com o servidor.');
     return null;
   }
 }
@@ -226,10 +216,10 @@ async function handleSubmit() {
     raca_uuid: pet.breed,
   };
 
-  if (pet.weight) apiData.peso = pet.weight;
+  // Adiciona sexo e registro se presentes
+  if (pet.sex) apiData.sexo = pet.sex;
+  if (pet.registro) apiData.registro = pet.registro;
 
-  console.log('Dados a serem enviados para a API:', apiData);
-  alert(`Pet "${pet.name}" pronto para ser salvo!`);
 }
 
 onMounted(() => {
