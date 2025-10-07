@@ -4,11 +4,12 @@
       ref="inputRef"
       :model-value="searchTerm"
       @input="onInput"
-      @focus="isOpen = true"
+      @focus="!props.disabled && (isOpen = true)"
       @keydown.down.prevent="navigateOptions(1)"
       @keydown.up.prevent="navigateOptions(-1)"
       @keydown.enter.prevent="selectHighlightedOption"
       :placeholder="placeholder"
+      :disabled="props.disabled"
       autocomplete="off"
     />
     <Transition
@@ -17,16 +18,16 @@
       leave-to-class="opacity-0"
     >
       <div
-        v-if="isOpen && filteredOptions.length"
+        v-if="isOpen && filteredOptions.length && !props.disabled"
         class="absolute z-10 mt-1 w-full bg-card border rounded-md shadow-lg max-h-60 overflow-y-auto"
       >
         <ul>
           <li
             v-for="(option, index) in filteredOptions"
             :key="option.value"
-            @click="selectOption(option)"
-            class="px-4 py-2 hover:bg-muted cursor-pointer"
-            :class="{ 'bg-muted': highlightedIndex === index }"
+            @click="!props.disabled && selectOption(option)"
+            class="px-4 py-2 hover:bg-muted"
+            :class="{ 'cursor-pointer': !props.disabled, 'cursor-not-allowed opacity-50': props.disabled, 'bg-muted': highlightedIndex === index }"
           >
             {{ option.label }}
           </li>
@@ -50,6 +51,7 @@ const props = defineProps<{
   modelValue: string | null;
   options: ComboboxOption[];
   placeholder?: string;
+  disabled?: boolean;
 }>();
 
 const emit = defineEmits<{

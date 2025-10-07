@@ -7,6 +7,13 @@
       </RouterLink>
       <div class="ml-auto flex items-center space-x-4">
         <div class="hidden md:flex md:items-center md:space-x-4">
+          <RouterLink to="/suporte" class="text-sm font-medium transition-colors hover:text-primary">
+            Suporte
+          </RouterLink>
+          <RouterLink to="/sobre" class="text-sm font-medium transition-colors hover:text-primary">
+            Sobre
+          </RouterLink>
+
           <template v-if="authStore.isAuthenticated">
             <RouterLink to="/pets" class="text-sm font-medium transition-colors hover:text-primary">
               Meus Pets
@@ -16,13 +23,8 @@
             </RouterLink>
             <Button variant="ghost" @click="handleLogout">Sair</Button>
           </template>
+
           <template v-else>
-            <RouterLink to="/services" class="text-sm font-medium transition-colors hover:text-primary">
-              Serviços
-            </RouterLink>
-            <RouterLink to="/sobre" class="text-sm font-medium transition-colors hover:text-primary">
-              Sobre
-            </RouterLink>
             <RouterLink to="/auth/login" class="text-sm font-medium transition-colors hover:text-primary">
               Entrar
             </RouterLink>
@@ -41,6 +43,13 @@
     </div>
     <div v-if="mobileMenuOpen" class="md:hidden">
       <div class="container py-4 space-y-3">
+        <RouterLink to="/suporte" class="block text-sm font-medium transition-colors hover:text-primary" @click="mobileMenuOpen = false">
+          Suporte
+        </RouterLink>
+        <RouterLink to="/sobre" class="block text-sm font-medium transition-colors hover:text-primary" @click="mobileMenuOpen = false">
+          Sobre
+        </RouterLink>
+        
         <template v-if="authStore.isAuthenticated">
           <RouterLink to="/pets" class="block text-sm font-medium transition-colors hover:text-primary" @click="mobileMenuOpen = false">
             Meus Pets
@@ -50,13 +59,8 @@
           </RouterLink>
           <Button variant="ghost" @click="handleLogout" class="w-full justify-start">Sair</Button>
         </template>
+        
         <template v-else>
-          <RouterLink to="/services" class="block text-sm font-medium transition-colors hover:text-primary" @click="mobileMenuOpen = false">
-            Serviços
-          </RouterLink>
-          <RouterLink to="/sobre" class="block text-sm font-medium transition-colors hover:text-primary" @click="mobileMenuOpen = false">
-            Sobre
-          </RouterLink>
           <RouterLink to="/auth/login" class="block text-sm font-medium transition-colors hover:text-primary" @click="mobileMenuOpen = false">
             Entrar
           </RouterLink>

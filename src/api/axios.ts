@@ -3,19 +3,18 @@
 import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
 
-// Criação da instância base do Axios
+const apiBase = 'https://api.zampet.dev.cybercore.dev.br';
+console.log('[apiClient] baseURL =', apiBase);
+
 const apiClient = axios.create({
-  // Aponta para o proxy configurado no vite.config.ts
-  baseURL: '/api',
+  baseURL: apiBase,
   headers: {
     'Content-Type': 'application/json',
   },
-  // Define um tempo limite de 10 segundos para as requisições
   timeout: 10000,
 });
 
-// --- INTERCEPTOR DE REQUISIÇÃO ---
-// Esta é a versão correta, que envia o cabeçalho "Authorization: Bearer"
+
 apiClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('authToken');

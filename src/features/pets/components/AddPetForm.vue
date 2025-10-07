@@ -11,6 +11,7 @@
       <div class="space-y-2">
         <Label for="dob">Data de Nascimento *</Label>
         <Input id="dob" type="date" v-model="pet.dob" required />
+        <p v-if="pet.dob && !isDobValid" class="text-sm text-red-600">A data de nascimento não pode ser posterior à data de hoje.</p>
       </div>
 
       <div class="space-y-2">
@@ -107,6 +108,14 @@ const pet = reactive({
   registro: '',
 });
 
+// Prevent duplicate submissions
+const isSubmitting = ref(false);
+
+// Se a espécie mudar, limpar a raça para forçar selecionar novamente
+watch(() => pet.species, () => {
+  pet.breed = null;
+});
+
 // --- OPÇÕES DE RAÇA ---
 const breedOptions = computed(() => {
   if (!pet.species) return [];
@@ -186,39 +195,97 @@ async function createNewBreed() {
   }
 }
 
+// --- Validação da data de nascimento ---
+// Use string compare because the input returns YYYY-MM-DD which compares
+// lexicographically correctly for dates.
+const todayISO = new Date().toISOString().slice(0, 10);
+const isDobValid = computed(() => {
+  if (!pet.dob) return false;
+  return pet.dob <= todayISO;
+});
+
 // --- Validação geral ---
 const isFormValid = computed(() => {
-  return !!pet.name && !!pet.species && !!pet.breed && !!pet.dob;
+  // nome, data de nascimento (não futura) e sexo são obrigatórios; raça é opcional até
+  // que o usuário selecione uma espécie — mas se breed estiver preenchido
+  // ele deve ser um UUID existente (isExistingBreed)
+  if (!pet.name || !pet.dob || !pet.sex) return false;
+  if (!isDobValid.value) return false;
+  if (pet.species && pet.breed) {
+    // se breed foi preenchido, deve existir na espécie selecionada
+    return isExistingBreed.value;
+  }
+  return true;
 });
 
 // --- Envio do formulário ---
 async function handleSubmit() {
+  if (isSubmitting.value) {
+    console.warn('Ignorando envio duplicado: já existe um envio em andamento.');
+    return;
+  }
+
   if (!isFormValid.value) {
     alert('Por favor, preencha os campos obrigatórios (*).');
     return;
   }
-
-  // Se a raça digitada não existir, cria automaticamente antes de enviar
-  if (!isExistingBreed.value && typeof pet.breed === 'string') {
-    const confirmed = confirm(`A raça "${pet.breed}" não existe. Deseja criá-la agora?`);
-    if (confirmed) {
-      const newBreedUuid = await createNewBreed();
-      if (!newBreedUuid) return;
-    } else {
-      return; // cancela o envio
-    }
-  }
+  isSubmitting.value = true;
+  // Determine a valid breed UUID to send (only send when it's an actual UUID
+  // that exists for the selected species). This prevents sending free-text.
+  const breedUuid = pet.breed && isExistingBreed.value ? pet.breed : null;
 
   const apiData: any = {
-    nome: pet.name,
-    data_nascimento: pet.dob,
-    especie_uuid: pet.species,
-    raca_uuid: pet.breed,
-  };
+    name: pet.name,
+    birthDate: pet.dob,
+    sexo: pet.sex,
+    registro_geral_animal: pet.registro || undefined,
+  } as any;
 
-  // Adiciona sexo e registro se presentes
+  if (breedUuid) apiData.raca_uuid = breedUuid;
   if (pet.sex) apiData.sexo = pet.sex;
   if (pet.registro) apiData.registro = pet.registro;
+
+    // Envia para a API e loga no console se foi bem sucedido ou não
+    try {
+      console.log('Enviando pet para API:', apiData);
+      // Debug: mostrar a URL completa que axios usará
+      try {
+        // import apiClient dynamically to avoid circular imports at top-level
+        const { default: apiClient } = await import('@/api/axios');
+        console.log('[debug] apiClient baseURL =', apiClient.defaults.baseURL, 'request path =', '/v0/pet/create-pet');
+      } catch (e) {
+        console.warn('Não foi possível ler apiClient para debug do baseURL', e);
+      }
+
+      const response = await petsService.createPet(apiData);
+      console.log('Resposta da API (createPet):', response.data);
+
+      if (response.data?.status === 'success') {
+        console.log('Pet criado com sucesso:', response.data.data);
+        // Log the breed UUID we sent (if any) so the user always sees it
+        if (breedUuid) {
+          console.log('UUID da raça enviada:', breedUuid);
+        } else {
+          console.log('Nenhuma UUID de raça enviada (nenhuma raça selecionada).');
+        }
+
+        // If backend returns a raca_uuid in the created pet payload, show it too
+        const returnedBreedUuid = response.data?.data?.raca_uuid || response.data?.data?.breed_uuid || null;
+        if (returnedBreedUuid) {
+          console.log('UUID da raça retornada pela API:', returnedBreedUuid);
+        }
+
+        // opcional: reset do formulário
+        // Object.assign(pet, { name: '', species: null, breed: null, dob: '', sex: null, registro: '' });
+      } else {
+        console.error('Resposta de erro da API ao criar pet:', response.data);
+      }
+    } catch (err) {
+      console.error('Erro ao comunicar com a API ao criar pet:', err);
+    } finally {
+      isSubmitting.value = false;
+    }
+
 
 }
 

@@ -7,6 +7,7 @@ import { authRoutes } from '../features/auth/routes'
 import { aboutRoutes } from '../features/about/routes'
 import { petsRoutes } from '../features/pets/routes'
 import { profileRoutes } from '../features/profile/routes'
+import { supportRoutes } from '../features/support/routes'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -16,6 +17,7 @@ const router = createRouter({
     ...aboutRoutes,
     ...petsRoutes,
     ...profileRoutes,
+    ...supportRoutes,
     {
       path: '/:pathMatch(.*)*',
       name: 'notFound',

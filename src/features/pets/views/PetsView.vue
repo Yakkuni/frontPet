@@ -59,11 +59,10 @@
     </Dialog>
   </div>
 </template>
-
 <script setup lang="ts">
 import { ref, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
-import { PlusIcon } from 'lucide-vue-next';
+import { PlusIcon, PawPrint } from 'lucide-vue-next';
 import Navbar from '@/components/Navbar.vue';
 import Button from '@/components/ui/Button.vue';
 import Card from '@/components/ui/Card.vue';
@@ -72,35 +71,85 @@ import CardTitle from '@/components/ui/CardTitle.vue';
 import CardDescription from '@/components/ui/CardDescription.vue';
 import Dialog from '@/components/ui/Dialog.vue';
 import AddPetForm from '@/features/pets/components/AddPetForm.vue';
+import { petsService } from '@/api/petsService';
 
+// --- Lógica do Modal ---
 const isModalOpen = ref(false);
-const addPetFormRef = ref<{ handleSubmit: () => void } | null>(null);
+const addPetFormRef = ref<{ handleSubmit: () => Promise<boolean> } | null>(null);
 
-function submitForm() {
+async function submitForm() {
   if (addPetFormRef.value) {
-    addPetFormRef.value.handleSubmit();
-    isModalOpen.value = false;
+    const success = await addPetFormRef.value.handleSubmit();
+    if (success) {
+      isModalOpen.value = false;
+      fetchPets();
+    }
   }
 }
 
+// --- Interface e Estado dos Pets ---
 interface Pet {
-  id: string;
+  uuid: string;
   name: string;
-  age: number;
+  age: string;
   imageUrl?: string;
 }
 
 const pets = ref<Pet[]>([]);
 const isLoading = ref(true);
 
-onMounted(() => {
-  setTimeout(() => {
-    pets.value = [
-      { id: '1', name: 'Rex', age: 3, imageUrl: '/tittle.jpg' },
-      { id: '2', name: 'Luna', age: 2, imageUrl: '/placeholder-pet.jpg' },
-      { id: '3', name: 'Max', age: 4, imageUrl: '/placeholder-pet.jpg' }
-    ];
+// --- Lógica de Busca de Dados ---
+/**
+ * Função de cálculo de idade ATUALIZADA.
+ * Agora verifica se a data de nascimento é válida antes de calcular.
+ */
+function calculateAge(dob: string): string {
+  if (!dob) return 'Idade desconhecida';
+  const birthDate = new Date(dob);
+
+  // Verificação para datas inválidas
+  if (isNaN(birthDate.getTime())) {
+    return 'Data inválida';
+  }
+  
+  const today = new Date();
+  let years = today.getFullYear() - birthDate.getFullYear();
+  const months = today.getMonth() - birthDate.getMonth();
+  
+  if (months < 0 || (months === 0 && today.getDate() < birthDate.getDate())) {
+    years--;
+  }
+
+  if (years < 1) {
+    const totalMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + months;
+    return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'}`;
+  }
+  
+  return `${years} ${years === 1 ? 'ano' : 'anos'}`;
+}
+
+async function fetchPets() {
+  isLoading.value = true;
+  try {
+    const response = await petsService.getMyPets();
+    // A estrutura response.data.data está correta com base no seu exemplo.
+    const apiPets = response.data.data || []; 
+    
+    pets.value = apiPets.map((pet: any) => ({
+      uuid: pet.uuid,
+      name: pet.nome,
+      age: calculateAge(pet.data_nascimento),
+      // Mapeamento de foto ATUALIZADO para usar 'caminho_foto' ou 'photo_path'
+      imageUrl: pet.caminho_foto || pet.photo_path
+    }));
+  } catch (error) {
+    console.error("Erro ao buscar a lista de pets:", error);
+  } finally {
     isLoading.value = false;
-  }, 1500);
+  }
+}
+
+onMounted(() => {
+  fetchPets();
 });
 </script>

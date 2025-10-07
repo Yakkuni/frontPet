@@ -16,14 +16,11 @@ export const petsService = {
   },
 
   createPet(petData: any) {
-    return apiClient.post('/v0/pets', petData);
+    // interceptor already adds Authorization header, avoid duplicating
+    return apiClient.post('/module/tutor/v0/pet/create-pet', petData);
   },
 
   createBreed(data: { especie_uuid: string; descricao: string }) {
-    return apiClient.post('/module/tutor/v0/pet/create-raca', data, {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem('authToken')}`
-      }
-    });
+    return apiClient.post('/module/tutor/v0/pet/create-raca', data);
   }
 };
