@@ -23,19 +23,19 @@
       </div>
       
       <div v-else class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Card v-for="pet in pets" :key="pet.id" class="overflow-hidden">
-          <img 
-            :src="pet.imageUrl || '/placeholder-pet.jpg'" 
-            :alt="pet.name"
-            class="w-full h-48 object-cover"
-          />
+        <Card v-for="pet in pets" :key="pet.uuid" class="overflow-hidden">
+          
+          <div class="w-full h-48 flex items-center justify-center bg-muted">
+            <PawPrint class="w-20 h-20 text-muted-foreground/50" />
+          </div>
+
           <CardContent class="p-4">
             <CardTitle>{{ pet.name }}</CardTitle>
-            <CardDescription>{{ pet.age }} anos</CardDescription>
+            <CardDescription>{{ pet.age }}</CardDescription>
             
             <div class="mt-4">
               <Button as-child variant="outline" class="w-full">
-                <router-link :to="`/pets/${pet.id}`">
+                <router-link :to="`/pets/${pet.uuid}`">
                   Ver detalhes
                 </router-link>
               </Button>
@@ -50,7 +50,7 @@
       title="Adicionar Novo Pet"
       description="Preencha as informações abaixo para cadastrar seu companheiro."
     >
-      <AddPetForm ref="addPetFormRef">
+      <AddPetForm ref="addPetFormRef" @created="onPetCreated" @close="isModalOpen = false">
         <template #footer="{ isFormValid }">
           <Button variant="outline" @click="isModalOpen = false">Cancelar</Button>
           <Button @click="submitForm" :disabled="!isFormValid" class="ml-2">Salvar Pet</Button>
@@ -79,12 +79,17 @@ const addPetFormRef = ref<{ handleSubmit: () => Promise<boolean> } | null>(null)
 
 async function submitForm() {
   if (addPetFormRef.value) {
-    const success = await addPetFormRef.value.handleSubmit();
-    if (success) {
-      isModalOpen.value = false;
-      fetchPets();
-    }
+    await addPetFormRef.value.handleSubmit();
+    // actual closing/refresh will be triggered by the 'created' event handler
   }
+}
+
+function onPetCreated(createdPet: any) {
+  // close the modal and refresh the list
+  isModalOpen.value = false;
+  fetchPets();
+  // optionally add to local list immediately
+  // pets.value.unshift({ uuid: createdPet.uuid, name: createdPet.nome, age: calculateAge(createdPet.data_nascimento), imageUrl: createdPet.caminho_foto || createdPet.photo_path });
 }
 
 // --- Interface e Estado dos Pets ---

@@ -36,9 +36,8 @@
           :options="breedOptions"
           :disabled="!pet.species"
           placeholder="Selecione uma raça existente ou digite uma nova"
-        />
-
-        <!-- Mensagens de status -->
+  />
+    <!-- Mensagens de status -->
         <div class="mt-1 text-sm">
           <p v-if="isExistingBreed" class="text-green-600 flex items-center gap-1">
             ✓ Raça existente selecionada
@@ -50,7 +49,7 @@
               type="button"
               class="px-3 py-1 bg-blue-600 text-white rounded-md text-sm hover:bg-blue-700 w-fit"
               @click="confirmCreateBreed"
-            >
+              >
               Criar Raça
             </button>
           </div>
@@ -59,6 +58,7 @@
              class="text-gray-500 flex items-center gap-1">
             ⌨️ Digite pelo menos 2 caracteres para buscar ou criar raça
           </p>
+          <p v-if="breedErrorMessage" class="text-sm text-red-600 mt-1">{{ breedErrorMessage }}</p>
         </div>
       </div>
       
@@ -96,6 +96,14 @@ import Combobox from '@/components/ui/Combobox.vue';
 
 const speciesStore = useSpeciesStore();
 
+// Emits: 'created' (payload: created pet), 'close' (request parent to close modal)
+const emit = defineEmits<{
+  (e: 'created', pet: any): void;
+  (e: 'close'): void;
+}>();
+
+const successMessage = ref('');
+
 // Foto removida: não armazenamos preview nem arquivo no formulário
 
 // --- ESTADO DO FORMULÁRIO ---
@@ -130,11 +138,9 @@ const breedOptions = computed(() => {
 });
 
 // --- VERIFICAÇÕES ---
-const isExistingBreed = computed(() => {
-  if (!pet.breed || !pet.species) return false;
-  const selectedSpecies = speciesStore.allSpeciesData.find(s => s.uuid === pet.species);
-  if (!selectedSpecies || !selectedSpecies.racas) return false;
-  return selectedSpecies.racas.some(r => r && r.uuid === pet.breed);
+// Consider a breed 'present' only when it has non-whitespace characters.
+const hasBreedValue = computed(() => {
+  return typeof pet.breed === 'string' && pet.breed.trim().length > 0;
 });
 
 const newBreedName = computed(() => {
@@ -142,22 +148,22 @@ const newBreedName = computed(() => {
   return '';
 });
 
+const isExistingBreed = computed(() => {
+  if (!hasBreedValue.value || !pet.species) return false;
+  const selectedSpecies = speciesStore.allSpeciesData.find(s => s.uuid === pet.species);
+  if (!selectedSpecies || !selectedSpecies.racas) return false;
+  return selectedSpecies.racas.some(r => r && r.uuid === pet.breed);
+});
+
 // --- Mostrar o prompt de criação ---
 const showCreateBreedPrompt = computed(() => {
-  return (
-    pet.species &&
-    typeof pet.breed === 'string' &&
-    pet.breed.trim().length >= 2 &&
-    !isExistingBreed.value
-  );
+  return pet.species && newBreedName.value.length >= 2 && !isExistingBreed.value;
 });
 
 // --- Confirmação manual de criação ---
 async function confirmCreateBreed() {
-  const confirmed = confirm(`Deseja criar a raça "${newBreedName.value}"?`);
-  if (confirmed) {
-    await createNewBreed();
-  }
+  // Directly create the new breed without asking for browser confirmation
+  await createNewBreed();
 }
 
 // --- Criação de nova raça ---
@@ -207,25 +213,42 @@ const isDobValid = computed(() => {
 // --- Validação geral ---
 const isFormValid = computed(() => {
   // nome, data de nascimento (não futura) e sexo são obrigatórios; raça é opcional até
-  // que o usuário selecione uma espécie — mas se breed estiver preenchido
-  // ele deve ser um UUID existente (isExistingBreed)
+  // que o usuário selecione uma espécie — e a raça se torna obrigatória
   if (!pet.name || !pet.dob || !pet.sex) return false;
   if (!isDobValid.value) return false;
-  if (pet.species && pet.breed) {
-    // se breed foi preenchido, deve existir na espécie selecionada
-    return isExistingBreed.value;
-  }
+  // species and breed are now required
+  if (!pet.species) return false;
+  if (!hasBreedValue.value) return false;
+  // if breed has a value, it must be an existing breed UUID
+  if (!isExistingBreed.value) return false;
   return true;
+});
+
+const breedErrorMessage = computed(() => {
+  if (!pet.species) return '';
+  if (!hasBreedValue.value) return 'A raça é obrigatória.';
+  if (!isExistingBreed.value) return 'A raça deve ser uma opção existente ou crie-a antes de salvar.';
+  return '';
 });
 
 // --- Envio do formulário ---
 async function handleSubmit() {
   if (isSubmitting.value) {
-    console.warn('Ignorando envio duplicado: já existe um envio em andamento.');
     return;
   }
+  // Debug: log validation state so we can see why the guard may not run
+  console.debug('[AddPetForm] validation check:', {
+    isFormValid: isFormValid.value,
+    isDobValid: isDobValid.value,
+    name: pet.name,
+    dob: pet.dob,
+    sex: pet.sex,
+    species: pet.species,
+    breed: pet.breed,
+  });
 
   if (!isFormValid.value) {
+    console.warn('[AddPetForm] submit blocked by validation');
     alert('Por favor, preencha os campos obrigatórios (*).');
     return;
   }
@@ -247,26 +270,26 @@ async function handleSubmit() {
 
     // Envia para a API e loga no console se foi bem sucedido ou não
     try {
-      console.log('Enviando pet para API:', apiData);
       // Debug: mostrar a URL completa que axios usará
       try {
         // import apiClient dynamically to avoid circular imports at top-level
         const { default: apiClient } = await import('@/api/axios');
-        console.log('[debug] apiClient baseURL =', apiClient.defaults.baseURL, 'request path =', '/v0/pet/create-pet');
+      
       } catch (e) {
-        console.warn('Não foi possível ler apiClient para debug do baseURL', e);
       }
 
       const response = await petsService.createPet(apiData);
-      console.log('Resposta da API (createPet):', response.data);
 
       if (response.data?.status === 'success') {
-        console.log('Pet criado com sucesso:', response.data.data);
-        // Log the breed UUID we sent (if any) so the user always sees it
-        if (breedUuid) {
-          console.log('UUID da raça enviada:', breedUuid);
-        } else {
-          console.log('Nenhuma UUID de raça enviada (nenhuma raça selecionada).');
+        // Log created pet UUID for quick debugging
+        const createdUuid = response.data?.data?.uuid || response.data?.data?.id || null;
+
+        // Notify parent to close the modal / form and provide created pet data
+        try {
+          emit('created', response.data.data);
+          emit('close');
+        } catch (e) {
+          console.warn('emit error:', e);
         }
 
         // If backend returns a raca_uuid in the created pet payload, show it too
@@ -275,8 +298,8 @@ async function handleSubmit() {
           console.log('UUID da raça retornada pela API:', returnedBreedUuid);
         }
 
-        // opcional: reset do formulário
-        // Object.assign(pet, { name: '', species: null, breed: null, dob: '', sex: null, registro: '' });
+  // opcional: reset do formulário
+  // Object.assign(pet, { name: '', species: null, breed: null, dob: '', sex: null, registro: '' });
       } else {
         console.error('Resposta de erro da API ao criar pet:', response.data);
       }
@@ -285,7 +308,6 @@ async function handleSubmit() {
     } finally {
       isSubmitting.value = false;
     }
-
 
 }
 

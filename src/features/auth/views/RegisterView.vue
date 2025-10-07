@@ -66,6 +66,7 @@
                     <div v-if="form.password.length > 0" class="text-xs space-y-1 mt-2">
                       <p :class="passwordValidation.minLength ? 'text-green-500' : 'text-muted-foreground'">✓ Mínimo de 8 caracteres</p>
                       <p :class="passwordValidation.hasUppercase ? 'text-green-500' : 'text-muted-foreground'">✓ Pelo menos uma letra maiúscula</p>
+                      <p :class="passwordValidation.hasLowercase ? 'text-green-500' : 'text-muted-foreground'">✓ Pelo menos uma letra minúscula</p>
                       <p :class="passwordValidation.hasNumber ? 'text-green-500' : 'text-muted-foreground'">✓ Pelo menos um número</p>
                       <p :class="passwordValidation.hasSymbol ? 'text-green-500' : 'text-muted-foreground'">✓ Pelo menos um símbolo (!@#$%^&*)</p>
                     </div>
@@ -146,6 +147,7 @@ const passwordValidation = reactive({
   hasUppercase: false,
   hasNumber: false,
   hasSymbol: false,
+  hasLowercase: false,
 });
 
 const isPasswordValid = computed(() => Object.values(passwordValidation).every(Boolean));
@@ -154,6 +156,7 @@ function validatePassword() {
   const pass = form.password;
   passwordValidation.minLength = pass.length >= 8;
   passwordValidation.hasUppercase = /[A-Z]/.test(pass);
+  passwordValidation.hasLowercase = /[a-z]/.test(pass);
   passwordValidation.hasNumber = /\d/.test(pass);
   passwordValidation.hasSymbol = /[!@#$%^&*]/.test(pass);
 }

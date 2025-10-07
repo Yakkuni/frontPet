@@ -6,8 +6,8 @@ export const petsRoutes = [
   },
   // Descomente e ative a rota para os detalhes do pet
   {
-    path: '/pets/:id',
-    name: 'petDetail',
+    path: '/pets/:uuid', // O :uuid é um parâmetro dinâmico
+    name: 'pet-detalhe',
     component: () => import('@/features/pets/views/PetDetailView.vue')
   },
   {

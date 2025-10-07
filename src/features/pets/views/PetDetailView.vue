@@ -5,8 +5,13 @@
       <div v-if="isLoading" class="flex justify-center py-20">
         <p class="text-muted-foreground">A carregar informações do pet...</p>
       </div>
+
+      <div v-else-if="error" class="text-center py-20 bg-destructive/10 text-destructive rounded-lg">
+        <h2 class="text-2xl font-semibold mb-2">Ops! Algo deu errado</h2>
+        <p>{{ error }}</p>
+      </div>
       
-      <div v-else>
+      <div v-else-if="pet">
         <div class="flex items-center mb-12">
           <Button variant="ghost" as-child class="mr-4">
             <router-link to="/pets" class="flex items-center text-muted-foreground hover:text-foreground">
@@ -14,24 +19,22 @@
               Voltar aos Pets
             </router-link>
           </Button>
-          <h1 class="text-3xl font-bold">{{ pet.name }}</h1>
+          <h1 class="text-3xl font-bold">{{ pet.nome }}</h1>
         </div>
         
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
           <div class="md:col-span-1">
             <Card>
-              <img 
-                :src="pet.imageUrl || '/placeholder.jpg'" 
-                :alt="pet.name"
-                class="w-full h-64 object-cover"
-              />
+              <div class="w-full h-64 flex items-center justify-center bg-muted">
+                <PawPrint class="w-24 h-24 text-muted-foreground/50" />
+              </div>
+
               <CardContent class="p-6">
                 <div class="space-y-2">
-                  <div class="flex justify-between"><span class="font-medium">Espécie:</span> <span class="text-muted-foreground">{{ pet.species }}</span></div>
-                  <div class="flex justify-between"><span class="font-medium">Raça:</span> <span class="text-muted-foreground">{{ pet.breed }}</span></div>
-                  <div class="flex justify-between"><span class="font-medium">Idade:</span> <span class="text-muted-foreground">{{ pet.age }} anos</span></div>
-                  <div class="flex justify-between"><span class="font-medium">Peso:</span> <span class="text-muted-foreground">{{ pet.weight }} kg</span></div>
-                  <div class="flex justify-between"><span class="font-medium">Sexo:</span> <span class="text-muted-foreground">{{ pet.gender === 'male' ? 'Macho' : 'Fêmea' }}</span></div>
+                  <div class="flex justify-between"><span class="font-medium">Espécie:</span> <span class="text-muted-foreground">{{ pet.especie }}</span></div>
+                  <div class="flex justify-between"><span class="font-medium">Raça:</span> <span class="text-muted-foreground">{{ pet.raca }}</span></div>
+                  <div class="flex justify-between"><span class="font-medium">Idade:</span> <span class="text-muted-foreground">{{ age }}</span></div>
+                  <div class="flex justify-between"><span class="font-medium">Sexo:</span> <span class="text-muted-foreground">{{ formattedSex }}</span></div>
                 </div>
                 
                 <div class="mt-6 flex space-x-2">
@@ -48,7 +51,7 @@
                 <CardTitle>Observações Importantes</CardTitle>
               </CardHeader>
               <CardContent>
-                <p class="text-muted-foreground">{{ pet.notes }}</p>
+                <p class="text-muted-foreground">{{ petNotes }}</p>
               </CardContent>
             </Card>
 
@@ -78,15 +81,12 @@
                   <h4 class="font-semibold mb-3">Últimas Vacinas</h4>
                   <div v-if="latestVaccines.length === 0" class="text-sm text-center py-4 text-muted-foreground">Nenhuma vacina recente.</div>
                   <div v-else class="space-y-4">
-                    <div v-for="service in latestVaccines" :key="service.name" class="border-b pb-3 last:border-b-0">
+                    <div v-for="vaccine in latestVaccines" :key="vaccine.id" class="border-b pb-3 last:border-b-0">
                       <div class="flex justify-between items-start">
                         <div>
-                          <h3 class="font-medium">{{ service.name }}</h3>
-                          <p class="text-sm text-muted-foreground">{{ format(new Date(service.date), 'dd/MM/yyyy') }}</p>
+                          <h3 class="font-medium">{{ vaccine.nome }}</h3>
+                          <p class="text-sm text-muted-foreground">Aplicada em: {{ format(new Date(vaccine.data_aplicacao), 'dd/MM/yyyy') }}</p>
                         </div>
-                        <span :class="service.statusClass" class="px-2 py-1 rounded-full text-xs font-medium">
-                          {{ service.status }}
-                        </span>
                       </div>
                     </div>
                   </div>
@@ -94,30 +94,9 @@
 
                 <div>
                   <h4 class="font-semibold mb-3">Últimos Serviços</h4>
-                  <div v-if="latestOtherServices.length === 0" class="text-sm text-center py-4 text-muted-foreground">Nenhum outro serviço recente.</div>
-                  <div v-else class="space-y-4">
-                    <div v-for="service in latestOtherServices" :key="service.name" class="border-b pb-3 last:border-b-0">
-                      <div class="flex justify-between items-start">
-                        <div>
-                          <h3 class="font-medium">{{ service.name }}</h3>
-                          <p class="text-sm text-muted-foreground">{{ format(new Date(service.date), 'dd/MM/yyyy') }}</p>
-                        </div>
-                        <span :class="service.statusClass" class="px-2 py-1 rounded-full text-xs font-medium">
-                          {{ service.status }}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
+                  <div class="text-sm text-center py-4 text-muted-foreground">Nenhum outro serviço recente.</div>
                 </div>
               </CardContent>
-              <CardFooter class="flex-col sm:flex-row gap-4 justify-between">
-                <Button variant="outline" class="w-full sm:w-auto border-primary text-primary hover:bg-primary/10 hover:text-primary">
-                  <Syringe class="w-4 h-4 mr-2" /> Ver histórico de vacinas
-                </Button>
-                <Button variant="outline" class="w-full sm:w-auto border-blue-500 text-blue-500 hover:bg-blue-500/10 hover:text-blue-500">
-                  <ClipboardList class="w-4 h-4 mr-2" /> Ver todos os serviços
-                </Button>
-              </CardFooter>
             </Card>
           </div>
         </div>
@@ -128,85 +107,106 @@
 
 <script setup lang="ts">
 import { ref, onMounted, computed } from 'vue';
-import { addMonths, differenceInDays, format, formatDistanceToNow } from 'date-fns';
+import { useRoute, RouterLink } from 'vue-router';
+import { format, differenceInDays, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+
+// Imports de Serviços
+import { petsService } from '@/api/petsService';
+
+// Imports de Componentes e Ícones
 import Navbar from '@/components/Navbar.vue';
 import Card from '@/components/ui/Card.vue';
 import CardContent from '@/components/ui/CardContent.vue';
 import CardHeader from '@/components/ui/CardHeader.vue';
 import CardTitle from '@/components/ui/CardTitle.vue';
-import CardFooter from '@/components/ui/CardFooter.vue';
 import Button from '@/components/ui/Button.vue';
 import AlertItem, { type Alert } from '@/features/pets/components/AlertItem.vue';
-import { ArrowLeftIcon, PencilIcon, TrashIcon, Syringe, ClipboardList, AlertTriangle, Stethoscope } from 'lucide-vue-next';
+import { ArrowLeftIcon, PencilIcon, TrashIcon, Syringe, ClipboardList, AlertTriangle, Stethoscope, PawPrint } from 'lucide-vue-next';
 
+// --- ESTADO DO COMPONENTE ---
 const isLoading = ref(true);
+const pet = ref<any>(null);
+const error = ref<string | null>(null);
 
-const pet = ref({
-  id: 'mock-123',
-  name: 'Rex',
-  species: 'Cachorro',
-  breed: 'Golden Retriever',
-  age: 5,
-  weight: 32.5,
-  gender: 'male' as const,
-  imageUrl: '/tittle.jpg',
-  notes: 'Rex é muito dócil e adora brincar de buscar a bolinha. Tem alergia a frango e precisa de ração hipoalergénica. Fica ansioso quando ouve trovões.'
+// --- SETUP DO ROUTER ---
+const route = useRoute();
+const petUuid = route.params.uuid as string;
+
+// --- PROPRIEDADES COMPUTADAS (para formatar dados da API) ---
+const age = computed(() => {
+    if (!pet.value?.data_nascimento) return 'Idade desconhecida';
+    const birthDate = new Date(pet.value.data_nascimento);
+    if (isNaN(birthDate.getTime())) return 'Data inválida';
+
+    const today = new Date();
+    let years = today.getFullYear() - birthDate.getFullYear();
+    const months = today.getMonth() - birthDate.getMonth();
+    if (months < 0 || (months === 0 && today.getDate() < birthDate.getDate())) {
+        years--;
+    }
+    if (years < 1) {
+        const totalMonths = (today.getFullYear() - birthDate.getFullYear()) * 12 + months;
+        return `${totalMonths} ${totalMonths === 1 ? 'mês' : 'meses'}`;
+    }
+    return `${years} ${years === 1 ? 'ano' : 'anos'}`;
 });
 
-const allServices = ref([
-  { name: 'Vacina Antirrábica', date: '2025-10-20', status: 'Realizado', type: 'vaccine', renewalMonths: 12 },
-  { name: 'Consulta de Rotina', date: '2025-08-02', status: 'Realizado', type: 'service', renewalMonths: 6 },
-  { name: 'Vacina Polivalente V10', date: '2025-03-15', status: 'Realizado', type: 'vaccine', renewalMonths: 12 },
-  { name: 'Banho e Tosa', date: '2025-09-20', status: 'Realizado', type: 'service' }, // Sem renovação
-]);
+const formattedSex = computed(() => {
+  if (!pet.value) return '...';
+  return pet.value.sexo === 'M' ? 'Macho' : 'Fêmea';
+});
 
-// LÓGICA PARA CALCULAR ALERTAS
+const petNotes = computed(() => {
+    return pet.value?.notes || 'Nenhuma observação importante cadastrada.';
+});
+
+const latestVaccines = computed(() => {
+  if (!pet.value?.vacinas) return [];
+  // Cria uma cópia, ordena por data de aplicação (da mais nova para a mais antiga) e pega as 3 primeiras
+  return [...pet.value.vacinas]
+    .sort((a: any, b: any) => new Date(b.data_aplicacao).getTime() - new Date(a.data_aplicacao).getTime())
+    .slice(0, 3);
+});
+
 const upcomingAlerts = computed<Alert[]>(() => {
+  if (!pet.value?.vacinas) return [];
   const today = new Date();
-  const twoMonthsFromNow = 60; // Limite em dias
+  const twoMonthsLimit = 60; // Limite de 60 dias para alertas
 
-  return allServices.value
-    .filter(service => service.renewalMonths) // Apenas serviços com período de renovação
-    .map(service => {
-      const lastAppliedDate = new Date(service.date);
-      const dueDate = addMonths(lastAppliedDate, service.renewalMonths!);
-      const daysUntilDue = differenceInDays(dueDate, today);
-
-      return { ...service, dueDate, daysUntilDue, lastAppliedDate };
-    })
-    .filter(service => service.daysUntilDue >= 0 && service.daysUntilDue <= twoMonthsFromNow) // Filtra serviços que vencem nos próximos 2 meses
-    .sort((a, b) => a.daysUntilDue - b.daysUntilDue) // Ordena pelos mais próximos
-    .map(service => {
-      let message = `A renovação deve ser feita ${formatDistanceToNow(service.dueDate, { locale: ptBR, addSuffix: true })}`;
-      let urgencyClass = 'bg-yellow-500/10 text-yellow-700 dark:text-yellow-300';
-      if (service.daysUntilDue <= 14) { // Menos de 2 semanas
-        message = `A vacina vence ${formatDistanceToNow(service.dueDate, { locale: ptBR, addSuffix: true })}!`;
-        urgencyClass = 'bg-red-500/10 text-red-700 dark:text-red-300';
-      }
-
-      return {
-        name: service.name,
-        message,
-        lastApplied: format(service.lastAppliedDate, 'dd/MM/yyyy'),
-        icon: service.type === 'vaccine' ? Syringe : Stethoscope,
-        urgencyClass,
-      };
-    });
+  return pet.value.vacinas
+    .filter((vaccine: any) => vaccine.data_reforco) // Apenas vacinas com data de reforço
+    .map((vaccine: any) => ({
+      ...vaccine,
+      dueDate: new Date(vaccine.data_reforco),
+      daysUntilDue: differenceInDays(new Date(vaccine.data_reforco), today),
+    }))
+    .filter((vaccine: any) => vaccine.daysUntilDue >= 0 && vaccine.daysUntilDue <= twoMonthsLimit) // Filtra reforços nos próximos 60 dias
+    .sort((a: any, b: any) => a.daysUntilDue - b.daysUntilDue) // Ordena pelos mais próximos
+    .map((vaccine: any) => ({
+      name: `Reforço: ${vaccine.nome}`,
+      message: `O reforço vence ${formatDistanceToNow(vaccine.dueDate, { locale: ptBR, addSuffix: true })}`,
+      lastApplied: `Última aplicação em: ${format(new Date(vaccine.data_aplicacao), 'dd/MM/yyyy')}`,
+      icon: Syringe,
+      urgencyClass: vaccine.daysUntilDue <= 14 ? 'bg-red-500/10 text-red-700' : 'bg-yellow-500/10 text-yellow-700',
+    }));
 });
 
-
-const latestVaccines = computed(() => 
-  allServices.value.filter(s => s.type === 'vaccine').slice(0, 2)
-);
-
-const latestOtherServices = computed(() => 
-  allServices.value.filter(s => s.type === 'service').slice(0, 2)
-);
-
-onMounted(() => {
-  setTimeout(() => {
+// --- LÓGICA DE CARREGAMENTO (quando o componente é montado) ---
+onMounted(async () => {
+  isLoading.value = true;
+  try {
+    const response = await petsService.getPetById(petUuid);
+    if (response.data.status === 'success') {
+      pet.value = response.data.data;
+    } else {
+      throw new Error(response.data.message || 'Pet não encontrado.');
+    }
+  } catch (err: any) {
+    error.value = err.message || 'Não foi possível carregar os dados do pet.';
+    console.error(err);
+  } finally {
     isLoading.value = false;
-  }, 500);
+  }
 });
 </script>

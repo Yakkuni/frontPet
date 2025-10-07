@@ -4,7 +4,6 @@ import axios from 'axios';
 import { useAuthStore } from '@/stores/auth';
 
 const apiBase = 'https://api.zampet.dev.cybercore.dev.br';
-console.log('[apiClient] baseURL =', apiBase);
 
 const apiClient = axios.create({
   baseURL: apiBase,
