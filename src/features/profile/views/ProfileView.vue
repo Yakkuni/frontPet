@@ -8,12 +8,12 @@
         <div>
           <Card>
             <CardContent class="p-6 text-center">
-              <div class="w-32 h-32 mx-auto rounded-full overflow-hidden mb-4 border-2 border-primary/20">
-                <img src="/placeholder.jpg" alt="Foto de perfil" class="w-full h-full object-cover" />
+              <div class="w-32 h-32 mx-auto rounded-full bg-muted flex items-center justify-center mb-4 border-2 border-primary/20">
+                <CircleUserRound class="w-20 h-20 text-muted-foreground/50" />
               </div>
               
-              <h2 class="text-xl font-semibold">João Silva</h2>
-              <p class="text-muted-foreground">joao.silva@email.com</p>
+              <h2 class="text-xl font-semibold truncate">{{ form.firstName }} {{ form.lastName }}</h2>
+              <p class="text-muted-foreground truncate">{{ form.email }}</p>
               
               <div class="mt-4">
                 <Button variant="outline" class="w-full">
@@ -25,7 +25,7 @@
           </Card>
         </div>
         
-        <div class="md:col-span-2">
+        <div class="md:col-span-2 space-y-8">
           <Card>
             <CardHeader>
               <CardTitle>Informações Pessoais</CardTitle>
@@ -39,24 +39,20 @@
                     <Label for="firstName">Nome</Label>
                     <Input id="firstName" v-model="form.firstName" />
                   </div>
-                  
                   <div class="space-y-2">
                     <Label for="lastName">Sobrenome</Label>
                     <Input id="lastName" v-model="form.lastName" />
                   </div>
                 </div>
-                
                 <div class="space-y-2">
                   <Label for="email">Email</Label>
                   <Input id="email" type="email" v-model="form.email" disabled />
                   <p class="text-xs text-muted-foreground">O email não pode ser alterado.</p>
                 </div>
-                
                 <div class="space-y-2">
                   <Label for="phone">Telefone</Label>
                   <Input id="phone" v-model="form.phone" />
                 </div>
-                
                 <div class="flex justify-end pt-4">
                   <Button type="submit" :disabled="isSaving">
                     <span v-if="isSaving">Salvando...</span>
@@ -66,9 +62,53 @@
               </form>
             </CardContent>
           </Card>
+
+          <Card class="border-destructive">
+            <CardHeader>
+              <CardTitle class="flex items-center gap-2 text-destructive">
+                <ShieldAlert class="w-5 h-5" />
+                Zona de Perigo
+              </CardTitle>
+            </CardHeader>
+            <CardContent class="flex flex-col sm:flex-row items-start sm:items-center justify-between">
+              <div>
+                <h3 class="font-semibold">Excluir sua conta</h3>
+                <p class="text-sm text-muted-foreground mt-1">
+                  Esta ação é permanente e todos os seus dados serão removidos.
+                </p>
+              </div>
+              <Button 
+                variant="destructive" 
+                @click="isDeleteModalOpen = true" 
+                class="mt-4 sm:mt-0"
+              >
+                Excluir Conta
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
+
+    <Dialog v-model:open="isDeleteModalOpen">
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle class="text-xl">Você tem certeza absoluta?</DialogTitle>
+          <DialogDescription class="pt-2">
+            Esta ação é **permanente** e não pode ser desfeita. Isso irá excluir para sempre sua conta e todos os seus dados, incluindo seus pets e históricos.
+            <br/><br/>
+            Para confirmar, clique no botão vermelho.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter class="pt-4">
+          <Button variant="outline" @click="isDeleteModalOpen = false">Cancelar</Button>
+          <Button variant="destructive" @click="handleDeleteAccount" :disabled="isDeleting">
+            <span v-if="isDeleting">Excluindo...</span>
+            <span v-else>Sim, excluir minha conta</span>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   </div>
 </template>
 
@@ -89,10 +129,10 @@ const isSaving = ref(false);
 
 // Mock de dados do usuário
 const form = reactive({
-  firstName: 'João',
-  lastName: 'Silva',
-  email: 'joao.silva@email.com',
-  phone: '(11) 98765-4321',
+  firstName: 'Seu Nome',
+  lastName: 'Seu Sobrenome',
+  email: 'seuemail@email.com',
+  phone: '(88) 98765-4321',
 });
 
 const saveProfile = () => {

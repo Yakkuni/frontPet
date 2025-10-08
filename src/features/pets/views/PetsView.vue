@@ -35,7 +35,7 @@
             
             <div class="mt-4">
               <Button as-child variant="outline" class="w-full">
-                <router-link :to="`/pets/${pet.uuid}`">
+                <router-link :to="{ name: 'pet-detalhe', params: { uuid: pet.uuid } }">
                   Ver detalhes
                 </router-link>
               </Button>
@@ -147,6 +147,7 @@ async function fetchPets() {
       // Mapeamento de foto ATUALIZADO para usar 'caminho_foto' ou 'photo_path'
       imageUrl: pet.caminho_foto || pet.photo_path
     }));
+    console.debug('[PetsView] loaded pets uuids:', pets.value.map(p => p.uuid));
   } catch (error) {
     console.error("Erro ao buscar a lista de pets:", error);
   } finally {

@@ -48,6 +48,7 @@
                     <div class="space-y-2">
                       <Label for="birthdate">Data de Nascimento</Label>
                       <Input id="birthdate" type="date" v-model="form.birthdate" @input="authStore.clearError()" required />
+                      <p v-if="form.birthdate && !isAgeValid" class="text-sm text-red-600">Data inválida.</p>
                     </div>
                   </div>
                   <div class="space-y-2">
@@ -141,6 +142,30 @@ const form = reactive({
   acceptTerms: false
 });
 
+// --- Validação de idade ---
+function calculateYearsFromDate(dateStr: string) {
+  if (!dateStr) return NaN;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return NaN;
+  const today = new Date();
+  let years = today.getFullYear() - d.getFullYear();
+  const m = today.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && today.getDate() < d.getDate())) years--;
+  return years;
+}
+
+const ageYears = computed(() => {
+  return calculateYearsFromDate(form.birthdate);
+});
+
+const isAgeValid = computed(() => {
+  if (!form.birthdate) return false;
+  const years = ageYears.value;
+  if (isNaN(years)) return false;
+  // Not future and not older than 110
+  return years >= 0 && years <= 110;
+});
+
 // Lógica de validação de senha
 const passwordValidation = reactive({
   minLength: false,
@@ -172,6 +197,10 @@ const formatCPF = () => {
 const handleRegister = async () => {
   if (!isPasswordValid.value) {
     authStore.error = 'A sua senha não cumpre todos os requisitos de segurança.';
+    return;
+  }
+  if (!isAgeValid.value) {
+    authStore.error = 'Data de nascimento inválida.';
     return;
   }
   if (form.password !== form.confirmPassword) {
