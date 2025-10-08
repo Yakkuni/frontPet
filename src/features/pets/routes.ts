@@ -8,7 +8,8 @@ export const petsRoutes = [
   {
     path: '/pets/:uuid', // O :uuid é um parâmetro dinâmico
     name: 'pet-detalhe',
-    component: () => import('@/features/pets/views/PetDetailView.vue')
+    component: () => import('@/features/pets/views/PetDetailView.vue'),
+    props: true
   },
   {
     path: '/pets/add',

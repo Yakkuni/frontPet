@@ -105,7 +105,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch } from 'vue';
 import { useRoute, useRouter, RouterLink } from 'vue-router';
 import { format, differenceInDays, formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -132,8 +132,10 @@ const isNavigating = ref(false);
 const router = useRouter();
 
 // --- SETUP DO ROUTER ---
+// receive uuid as a prop (route configured with props:true)
+const props = defineProps<{ uuid?: string }>();
 const route = useRoute();
-const petUuid = route.params.uuid as string;
+const petUuid = computed(() => props.uuid || (route.params.uuid as string));
 
 // --- PROPRIEDADES COMPUTADAS (para formatar dados da API) ---
 const age = computed(() => {
@@ -200,11 +202,16 @@ const upcomingAlerts = computed<Alert[]>(() => {
 });
 
 // --- LÓGICA DE CARREGAMENTO (quando o componente é montado) ---
-onMounted(async () => {
-  console.debug('[PetDetailView] route param uuid =', petUuid);
+async function loadPet(uuid: string | undefined) {
+  console.debug('[PetDetailView] loading pet uuid =', uuid);
+  if (!uuid) {
+    error.value = 'UUID do pet inválido.';
+    isLoading.value = false;
+    return;
+  }
   isLoading.value = true;
   try {
-    const response = await petsService.getPetById(petUuid);
+    const response = await petsService.getPetById(uuid);
     if (response.data.status === 'success') {
       pet.value = response.data.data;
 
@@ -231,6 +238,15 @@ onMounted(async () => {
   } finally {
     isLoading.value = false;
   }
+}
+
+onMounted(() => {
+  loadPet(petUuid.value);
+});
+
+// Re-load if route param changes without remounting
+watch(petUuid, (newUuid: string | undefined, oldUuid: string | undefined) => {
+  if (newUuid && newUuid !== oldUuid) loadPet(newUuid);
 });
 
 function handleGoBack() {
